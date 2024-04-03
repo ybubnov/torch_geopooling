@@ -32,16 +32,14 @@ exception::exception(const std::string& s)
 
 
 inline
-exception::exception()
-{ }
+const char*
+exception::what() const noexcept (true)
+{ return m_msg.c_str(); }
 
 
 inline
-const char*
-exception::what() const noexcept (true)
-{
-    return m_msg.c_str();
-}
+exception::~exception()
+{ }
 
 
 class value_error: public exception {
@@ -49,11 +47,11 @@ public:
     explicit
     value_error(const std::string& s);
 
-    template<typename ...T>
-    value_error(fmt::format_string<T...> fmt, T&& ...args)
-    : exception(fmt::format(fmt, args))
+    template<typename... UTypes>
+    value_error(fmt::format_string<UTypes...> fmt, UTypes&&... args)
+    : exception(fmt::vformat(fmt, fmt::make_format_args(args...)))
     { }
-}
+};
 
 
 inline
@@ -62,12 +60,21 @@ value_error::value_error(const std::string& s)
 { }
 
 
-class out_of_range: public std::out_of_range {
+class out_of_range: public exception {
+public:
+    explicit
+    out_of_range(const std::string& s);
+
     template<typename ...T>
-    out_of_range(fmt::format_string<T...> fmt, T&& ...args)
-    : std::out_of_range(fmt::format(fmt, args))
+    out_of_range(fmt::format_string<T...> fmt, T&&... args)
+    : exception(fmt::vformat(fmt, fmt::make_format_args(args...)))
     { }
-}
+};
+
+inline
+out_of_range::out_of_range(const std::string& s)
+: exception(s)
+{ }
 
 
 }
