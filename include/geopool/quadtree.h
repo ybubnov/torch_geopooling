@@ -5,6 +5,7 @@
 #include <initializer_list>
 #include <stdexcept>
 #include <queue>
+#include <iostream>
 
 #include <geopool/exception.h>
 
@@ -27,11 +28,11 @@ public:
     : m_elements({fill, fill, fill, fill})
     { }
 
-    quad(value_type t0, value_type t1, value_type t2, value_type t3)
-    : m_elements({t0, t1, t2, t3})
+    quad(value_type t00, value_type t01, value_type t10, value_type t11)
+    : m_elements({t00, t01, t10, t11})
     { }
 
-    const value_type&
+    value_type&
     at(size_type x, size_type y)
     {
         if (x > 1) {
@@ -42,6 +43,10 @@ public:
         }
         return m_elements.at(x * 2 + y);
     }
+
+    const value_type&
+    at(size_type x, size_type y) const
+    { return at(x, y); }
 
     const_iterator
     cbegin()
@@ -96,6 +101,15 @@ public:
     : quadrect({xmin, ymin, width, height})
     { }
 
+    bool
+    operator==(const quadrect& rhs) const
+    {
+        return (
+            m_xmin == rhs.m_xmin && m_xmax == rhs.m_xmax
+            && m_ymin == rhs.m_ymin && m_ymax == rhs.m_ymax
+        );
+    }
+
     inline value_type
     width() const
     { return m_xmax - m_xmin; }
@@ -135,6 +149,14 @@ public:
             {m_xmin + w, m_ymin, w, h},
             {m_xmin + w, m_ymin + h, w, h}
         );
+    }
+
+    friend std::ostream&
+    operator<< (std::ostream &os, const quadrect& rect)
+    {
+        os << "quadrect(" << rect.m_xmin << ", " << rect.m_ymin << ", ";
+        os << rect.width() << ", " << rect.height() << ")";
+        return os;
     }
 
 private:
@@ -200,10 +222,10 @@ private:
     iterator&
     next()
     {
-        auto node = m_queue.front();
-        if (!node.is_leaf()) {
-            for (auto const& child : node.quad) {
-                m_queue.push_back(child);
+        auto tree = m_queue.front();
+        if (!tree.is_leaf()) {
+            for (auto const& node: tree.m_nodes) {
+                m_queue.push_back(node);
             }
         }
 
@@ -217,20 +239,22 @@ template <typename Coordinate, typename T = long>
 class quadtree
 {
 public:
-    using value_type = T;
+    using key_type = std::pair<Coordinate, Coordinate>;
 
-    using coordinate = Coordinate;
+    using mapped_type = T;
 
-    using point_type = std::pair<coordinate, coordinate>;
+    using value_type = std::pair<key_type, mapped_type>;
 
-    using const_node_iterator = quadtree_iterator<coordinate, const value_type>;
+    using node_type = quad<quadtree<Coordinate, T>>;
 
-    quadtree(const std::initializer_list<coordinate> xywh)
+    using const_node_iterator = quadtree_iterator<Coordinate, const T>;
+
+    quadtree(const std::initializer_list<Coordinate> xywh)
     : quadtree(quadrect(xywh))
     { }
 
     quadtree(
-        const quadrect<coordinate>& quad,
+        const quadrect<Coordinate>& quad,
         std::size_t max_depth = 17,
         std::size_t capacity = 1,
         std::size_t z = 0,
@@ -243,20 +267,20 @@ public:
       m_z(z),
       m_x(x),
       m_y(y),
-      m_children(nullptr),
+      m_nodes(nullptr),
       m_data(0)
     { }
 
     inline bool
     is_leaf() const
-    { return m_children == nullptr; }
+    { return m_nodes == nullptr; }
 
-    const quadrect<coordinate>&
+    const quadrect<Coordinate>&
     exterior() const
     { return m_quadrect; }
 
     bool
-    contains(const point_type& point) const
+    contains(const key_type& point) const
     { return m_quadrect.contains(point); }
 
     const_node_iterator
@@ -267,23 +291,43 @@ public:
     cend() const
     { return quadtree_iterator<Coordinate, T>(*this); }
 
+    std::size_t
+    depth() const
+    { return m_z; }
+
     void
-    insert(const point_type& point, const value_type& value)
+    insert(const value_type& value)
     {
+        auto point = value.first;
         assert_contains(point);
+
+        auto& node = find(point);
+        node.m_data.push_back(value);
+
+        if (
+            node.m_nodes == nullptr
+            && (node.m_data.size() > m_capacity)
+            && (node.m_z <= m_max_depth)
+        ) {
+            node.subdivide();
+        }
     }
 
-    const quadtree<coordinate, value_type>&
-    find(const point_type& point, std::size_t max_depth = -1) const
+    void
+    insert(const key_type& point, const mapped_type& value)
+    { insert(std::make_pair(point, value)); }
+
+    quadtree<Coordinate, T>&
+    find(const key_type& point, std::size_t max_depth = -1)
     {
         assert_contains(point);
 
-        if (((m_z >= max_depth) && max_depth > 0) || m_children == nullptr) {
+        if (((m_z >= max_depth) && max_depth >= 0) || m_nodes == nullptr) {
             return *this;
         }
 
         auto centroid = m_quadrect.centroid();
-        std::size_t x, y = 0;
+        std::size_t x = 0, y = 0;
         if (point.first > centroid.first) {
             x += 1;
         }
@@ -291,8 +335,13 @@ public:
             y += 1;
         }
 
-        return m_children->at(x, y).find(point);
+        auto& tree = m_nodes->at(x, y);
+        return tree.find(point, max_depth);
     }
+
+    const quadtree<Coordinate, T>&
+    find(const key_type& point, std::size_t max_depth = -1) const
+    { return find(point, max_depth); }
 
 private:
     quadrect<Coordinate> m_quadrect;
@@ -301,17 +350,52 @@ private:
     std::size_t m_max_depth;
     std::size_t m_capacity;
 
-    std::shared_ptr<quad<quadtree>> m_children;
-    std::vector<T> m_data;
+    std::shared_ptr<node_type> m_nodes;
+    std::vector<value_type> m_data;
 
     void
-    assert_contains(const point_type& point) const
+    assert_contains(const key_type& point) const
     {
         if (!contains(point)) {
             throw value_error(
-                "point ({}, {}) is outside of quad geometry", point.first, point.second
+                "quadtree: point ({}, {}) is outside of quad geometry", point.first, point.second
             );
         }
+    }
+
+    quadtree<Coordinate, T>
+    make_subtree(quad<quadrect<Coordinate>>& quadrects, std::size_t x, std::size_t y) const
+    {
+        return quadtree(quadrects.at(x, y), m_max_depth, m_capacity, m_z+1, m_x * 2 + x, m_y * 2 + y);
+    }
+
+    void
+    subdivide()
+    {
+        if (m_nodes != nullptr) {
+            throw value_error("quadtree: tree is already split");
+        }
+
+        // Symmetrically split the quad into the equal-area elements and move
+        // the data from the parent node to sub-nodes. At the end, clear the
+        // data from the parent.
+        quad<quadrect<Coordinate>> quadrects = m_quadrect.symmetric_split();
+
+        node_type nodes(
+            make_subtree(quadrects, 0, 0),
+            make_subtree(quadrects, 0, 1),
+            make_subtree(quadrects, 1, 0),
+            make_subtree(quadrects, 1, 1)
+        );
+
+        m_nodes = std::make_shared<node_type>(std::move(nodes));
+
+        for (auto data : m_data) {
+            auto& node = find(data.first, -1);
+            node.insert(data);
+        }
+
+        m_data.clear();
     }
 };
 
