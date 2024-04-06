@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <queue>
 #include <iostream>
+#include <utility>
 
 #include <geopool/exception.h>
 
@@ -49,11 +50,11 @@ public:
     { return at(x, y); }
 
     const_iterator
-    cbegin()
+    begin() const
     { return m_elements.cbegin(); }
 
     const_iterator
-    cend()
+    end() const
     { return m_elements.cend(); }
 
 private:
@@ -166,73 +167,7 @@ private:
 
 
 template <typename Coordinate, typename V>
-class quadtree;
-
-
-template <typename Coordinate, typename V>
-class quadtree_iterator
-: public std::iterator<std::forward_iterator_tag, const quadtree<Coordinate, V> >
-{
-public:
-    using value_type = quadtree<Coordinate, V>;
-
-    using reference = value_type&;
-
-    using pointer = value_type*;
-
-    using iterator = quadtree_iterator<Coordinate, V>;
-
-    explicit
-    quadtree_iterator(const value_type& tree)
-    : m_queue(1)
-    { m_queue.push_back(tree); }
-
-    quadtree_iterator()
-    : m_queue(0)
-    { }
-
-    ~quadtree_iterator()
-    { }
-
-    iterator
-    operator++(int)
-    { return next(); }
-
-    iterator&
-    operator++()
-    { return next(); }
-
-    reference
-    operator*() const
-    { return m_queue.front(); }
-
-    pointer
-    operator->() const
-    { return m_queue.front(); }
-
-    bool
-    operator!=(const iterator& rhs)
-    { return !(m_queue.empty() && rhs.m_queue.empty()); }
-
-private:
-    friend class quadtree<Coordinate, V>;
-
-    std::queue<value_type> m_queue;
-
-    iterator&
-    next()
-    {
-        auto tree = m_queue.front();
-        if (!tree.is_leaf()) {
-            for (auto const& node: tree.m_nodes) {
-                m_queue.push_back(node);
-            }
-        }
-
-        m_queue.pop();
-        return *this;
-    }
-};
+class quadtree_iterator;
 
 
 template <typename Coordinate, typename T = long>
@@ -247,7 +182,7 @@ public:
 
     using node_type = quad<quadtree<Coordinate, T>>;
 
-    using const_node_iterator = quadtree_iterator<Coordinate, const T>;
+    using node_iterator = quadtree_iterator<Coordinate, T>;
 
     quadtree(const std::initializer_list<Coordinate> xywh)
     : quadtree(quadrect(xywh))
@@ -283,17 +218,35 @@ public:
     contains(const key_type& point) const
     { return m_quadrect.contains(point); }
 
-    const_node_iterator
-    cbegin() const
+    node_iterator
+    begin() const
     { return quadtree_iterator<Coordinate, T>(*this); }
 
-    const_node_iterator
-    cend() const
+    node_iterator
+    end() const
+    { return quadtree_iterator<Coordinate, T>(); }
+
+    node_iterator
+    begin()
     { return quadtree_iterator<Coordinate, T>(*this); }
+
+    node_iterator
+    end()
+    { return quadtree_iterator<Coordinate, T>(); }
 
     std::size_t
     depth() const
     { return m_z; }
+
+    std::size_t
+    total_depth() const
+    {
+        std::size_t depth = 0;
+        for (auto const& node : std::as_const(*this)) {
+            depth = std::max(depth, node.m_z);
+        }
+        return depth;
+    }
 
     void
     insert(const value_type& value)
@@ -343,7 +296,19 @@ public:
     find(const key_type& point, std::size_t max_depth = -1) const
     { return find(point, max_depth); }
 
+    std::size_t
+    size() const
+    {
+        std::size_t num_elements = 0;
+        for (auto const& node : std::as_const(*this)) {
+            num_elements += node.m_data.size();
+        }
+        return num_elements;
+    }
+
 private:
+    friend class quadtree_iterator<Coordinate, T>;
+
     quadrect<Coordinate> m_quadrect;
 
     std::size_t m_z, m_x, m_y;
@@ -396,6 +361,67 @@ private:
         }
 
         m_data.clear();
+    }
+};
+
+
+template <typename Coordinate, typename V>
+class quadtree_iterator
+{
+public:
+    using iterator_category = std::forward_iterator_tag;
+
+    using value_type = quadtree<Coordinate, V>;
+
+    using reference = value_type&;
+
+    using pointer = value_type*;
+
+    using iterator = quadtree_iterator<Coordinate, V>;
+
+    explicit
+    quadtree_iterator(const value_type& tree)
+    : m_queue()
+    { m_queue.push(tree); }
+
+    quadtree_iterator()
+    : m_queue()
+    { }
+
+    ~quadtree_iterator()
+    { }
+
+    iterator&
+    operator++()
+    { return next(); }
+
+    reference
+    operator*()
+    { return m_queue.front(); }
+
+    pointer
+    operator->()
+    { return m_queue.front(); }
+
+    bool
+    operator!=(const iterator& rhs)
+    { return !(m_queue.empty() && rhs.m_queue.empty()); }
+
+private:
+    std::queue<value_type> m_queue;
+
+    iterator&
+    next()
+    {
+        auto tree = m_queue.front();
+        if (!tree.is_leaf()) {
+            for (auto const& node: *tree.m_nodes) {
+                m_queue.push(node);
+            }
+        }
+
+        m_queue.pop();
+        return *this;
     }
 };
 
