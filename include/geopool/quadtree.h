@@ -1,14 +1,16 @@
 #pragma once
 
 #include <algorithm>
-#include <iterator>
+#include <cmath>
 #include <initializer_list>
+#include <iostream>
+#include <iterator>
 #include <stdexcept>
 #include <queue>
-#include <iostream>
 #include <utility>
 
 #include <geopool/exception.h>
+#include <geopool/tile.h>
 
 
 namespace geopool {
@@ -153,7 +155,7 @@ public:
     }
 
     friend std::ostream&
-    operator<< (std::ostream &os, const quadrect& rect)
+    operator<< (std::ostream& os, const quadrect& rect)
     {
         os << "quadrect(" << rect.m_xmin << ", " << rect.m_ymin << ", ";
         os << rect.width() << ", " << rect.height() << ")";
@@ -203,8 +205,12 @@ public:
       m_x(x),
       m_y(y),
       m_nodes(nullptr),
-      m_data(0)
+      m_data()
     { }
+
+    tile
+    tile() const
+    { return geopool::tile(m_z, m_x, m_y); }
 
     inline bool
     is_leaf() const
@@ -256,14 +262,7 @@ public:
 
         auto& node = find(point);
         node.m_data.push_back(value);
-
-        if (
-            node.m_nodes == nullptr
-            && (node.m_data.size() > m_capacity)
-            && (node.m_z <= m_max_depth)
-        ) {
-            node.subdivide();
-        }
+        node.subdivide();
     }
 
     void
@@ -290,6 +289,38 @@ public:
 
         auto& tree = m_nodes->at(x, y);
         return tree.find(point, max_depth);
+    }
+
+    quadtree<Coordinate, T>&
+    find(const class tile& t)
+    {
+        std::size_t mid_width = 1 << t.z();
+        mid_width >>= 1;
+
+        std::size_t xmid = mid_width, ymid = mid_width;
+
+        auto node = this;
+        while (!node->is_leaf() && t.z() > node->m_z) {
+            mid_width >>= 1;
+
+            std::size_t x = 0, y = 0;
+            if (t.x() >= xmid) {
+                x += 1;
+                xmid += mid_width;
+            } else {
+                xmid -= mid_width;
+            }
+            if (t.y() >= ymid) {
+                y += 1;
+                ymid += mid_width;
+            } else {
+                ymid -= mid_width;
+            }
+
+            node = &(node->m_nodes->at(x, y));
+        }
+
+        return *node;
     }
 
     const quadtree<Coordinate, T>&
@@ -331,14 +362,14 @@ private:
     quadtree<Coordinate, T>
     make_subtree(quad<quadrect<Coordinate>>& quadrects, std::size_t x, std::size_t y) const
     {
-        return quadtree(quadrects.at(x, y), m_max_depth, m_capacity, m_z+1, m_x * 2 + x, m_y * 2 + y);
+        return quadtree(quadrects.at(x, y), m_max_depth, m_capacity, m_z+1, m_x*2+x, m_y*2+y);
     }
 
     void
     subdivide()
     {
-        if (m_nodes != nullptr) {
-            throw value_error("quadtree: tree is already split");
+        if (m_nodes != nullptr || m_data.size() <= m_capacity || m_z >= m_max_depth) {
+            return;
         }
 
         // Symmetrically split the quad into the equal-area elements and move
@@ -357,7 +388,9 @@ private:
 
         for (auto data : m_data) {
             auto& node = find(data.first, -1);
-            node.insert(data);
+            if (node.tile() != tile()) {
+                node.insert(data);
+            }
         }
 
         m_data.clear();

@@ -14,6 +14,7 @@ foreach(geopool_TEST_SOURCE ${geopool_TEST_SOURCES})
     add_executable(${geopool_TEST} ${geopool_TEST_SOURCE})
     target_link_libraries(${geopool_TEST} ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY})
     target_link_libraries(${geopool_TEST} fmt::fmt)
+    target_link_libraries(${geopool_TEST} geopool)
 
     # Define a new test from the source file.
     add_test(NAME ${geopool_TEST} COMMAND ${geopool_TEST})
