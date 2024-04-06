@@ -32,11 +32,7 @@ tile::y() const
 tile
 tile::parent() const
 {
-    return tile(
-        m_z - 1,
-        static_cast<std::size_t>(std::floor(static_cast<double>(m_x)) / 2),
-        static_cast<std::size_t>(std::floor(static_cast<double>(m_y)) / 2)
-    );
+    return tile(m_z - 1, m_x >> 1, m_y >> 1);
 }
 
 
