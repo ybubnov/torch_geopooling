@@ -1,8 +1,8 @@
-#include <geopool/exception.h>
-#include <geopool/quadtree.h>
+#include <torch_geopooling/exception.h>
+#include <torch_geopooling/quadtree.h>
 
 
-namespace geopool {
+namespace torch_geopooling {
 
 
-}
+} // namespace torch_geopooling

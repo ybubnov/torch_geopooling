@@ -1,31 +1,34 @@
 cmake_minimum_required(VERSION 3.15)
 
-project(gepool, CXX)
+project(torch_geopooling, CXX)
 add_definitions(-std=c++17)
+
 find_package(fmt REQUIRED)
+find_package(torch REQUIRED)
 
 enable_testing()
 
-set(geopool_LIBRARY_VERSION "1.0.0")
-set(geopool_LIBRARY_SOVERSION "1")
+set(torch_geopooling_LIBRARY_VERSION "1.0.0")
+set(torch_geopooling_LIBRARY_SOVERSION "1")
 
 
 include_directories(include)
-include_directories(include/geopool)
+include_directories(include/torch_geopooling)
 
-aux_source_directory(src geopool_SOURCES)
+aux_source_directory(src torch_geopooling_SOURCES)
 
 # Add the testing directory.
 add_subdirectory(test)
 
 
-add_library(geopool SHARED ${geopool_SOURCES})
-set_target_properties(geopool PROPERTIES VERSION ${geopool_LIBRARY_VERSION})
-set_target_properties(geopool PROPERTIES SOVERSION ${geopool_LIBRARY_SOVERSION})
-target_link_libraries(geopool fmt::fmt)
+add_library(torch_geopooling SHARED ${torch_geopooling_SOURCES})
+set_target_properties(torch_geopooling PROPERTIES VERSION ${torch_geopooling_LIBRARY_VERSION})
+set_target_properties(torch_geopooling PROPERTIES SOVERSION ${torch_geopooling_LIBRARY_SOVERSION})
+target_link_libraries(torch_geopooling fmt::fmt)
+target_link_libraries(torch_geopooling torch)
 
 
 # Install the library files.
-install(DIRECTORY include/geopool DESTINATION geopool)
-install(FILES include/geopool.h DESTINATION include)
-install(TARGETS geopool DESTINATION lib)
+install(DIRECTORY include/torch_geopooling DESTINATION torch_geopooling)
+install(FILES include/torch_geopooling.h DESTINATION include)
+install(TARGETS torch_geopooling DESTINATION lib)

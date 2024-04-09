@@ -7,13 +7,15 @@
 #include <iterator>
 #include <stdexcept>
 #include <queue>
+#include <unordered_map>
 #include <utility>
 
-#include <geopool/exception.h>
-#include <geopool/tile.h>
+#include <torch_geopooling/exception.h>
+#include <torch_geopooling/functional.h>
+#include <torch_geopooling/tile.h>
 
 
-namespace geopool {
+namespace torch_geopooling {
 
 
 template <typename T>
@@ -75,7 +77,7 @@ public:
     {
         auto list_size = list.size();
         if (list_size != 4) {
-            throw value_error("quadrect: size of initializer list ({}) should be {}", list_size);
+            throw value_error("QuadRect: size of initializer list ({}) should be {}", list_size);
         }
 
         std::array<value_type, 4> xywh;
@@ -84,10 +86,10 @@ public:
         auto [x, y, w, h] = xywh;
 
         if (w <= T(0)) {
-            throw value_error("quadrect: width ({}) should be a positive number", w);
+            throw value_error("QuadRect: width ({}) should be a positive number", w);
         }
         if (h <= T(0)) {
-            throw value_error("quadrect: height ({}) should be a positive number", h);
+            throw value_error("QuadRect: height ({}) should be a positive number", h);
         }
 
         m_xmin = x;
@@ -157,7 +159,7 @@ public:
     friend std::ostream&
     operator<< (std::ostream& os, const quadrect& rect)
     {
-        os << "quadrect(" << rect.m_xmin << ", " << rect.m_ymin << ", ";
+        os << "QuadRect(" << rect.m_xmin << ", " << rect.m_ymin << ", ";
         os << rect.width() << ", " << rect.height() << ")";
         return os;
     }
@@ -168,11 +170,17 @@ private:
 };
 
 
-template <typename Coordinate, typename V>
+template
+<typename Coordinate, typename T, class Container>
 class quadtree_iterator;
 
 
-template <typename Coordinate, typename T = long>
+template
+<
+    typename Coordinate,
+    typename T = long,
+    class Container = std::unordered_map<std::pair<Coordinate, Coordinate>, T>
+>
 class quadtree
 {
 public:
@@ -182,9 +190,11 @@ public:
 
     using value_type = std::pair<key_type, mapped_type>;
 
-    using node_type = quad<quadtree<Coordinate, T>>;
+    using container_type = Container;
 
-    using node_iterator = quadtree_iterator<Coordinate, T>;
+    using node_type = quad<quadtree<Coordinate, T, Container>>;
+
+    using node_iterator = quadtree_iterator<Coordinate, T, Container>;
 
     quadtree(const std::initializer_list<Coordinate> xywh)
     : quadtree(quadrect(xywh))
@@ -196,7 +206,8 @@ public:
         std::size_t capacity = 1,
         std::size_t z = 0,
         std::size_t x = 0,
-        std::size_t y = 0
+        std::size_t y = 0,
+        std::size_t precision = 7
     )
     : m_quadrect(quad),
       m_max_depth(max_depth),
@@ -205,12 +216,12 @@ public:
       m_x(x),
       m_y(y),
       m_nodes(nullptr),
-      m_data()
+      m_precision(precision)
     { }
 
     tile
     tile() const
-    { return geopool::tile(m_z, m_x, m_y); }
+    { return torch_geopooling::tile(m_z, m_x, m_y); }
 
     inline bool
     is_leaf() const
@@ -226,19 +237,19 @@ public:
 
     node_iterator
     begin() const
-    { return quadtree_iterator<Coordinate, T>(*this); }
+    { return node_iterator(*this); }
 
     node_iterator
     end() const
-    { return quadtree_iterator<Coordinate, T>(); }
+    { return node_iterator(); }
 
     node_iterator
     begin()
-    { return quadtree_iterator<Coordinate, T>(*this); }
+    { return node_iterator(*this); }
 
     node_iterator
     end()
-    { return quadtree_iterator<Coordinate, T>(); }
+    { return node_iterator(); }
 
     std::size_t
     depth() const
@@ -257,11 +268,11 @@ public:
     void
     insert(const value_type& value)
     {
-        auto point = value.first;
+        auto point = round(value.first, m_precision);
         assert_contains(point);
 
         auto& node = find(point);
-        node.m_data.push_back(value);
+        node.m_data.insert(std::make_pair(point, value.second));
         node.subdivide();
     }
 
@@ -338,16 +349,17 @@ public:
     }
 
 private:
-    friend class quadtree_iterator<Coordinate, T>;
+    friend class quadtree_iterator<Coordinate, T, Container>;
 
     quadrect<Coordinate> m_quadrect;
 
     std::size_t m_z, m_x, m_y;
     std::size_t m_max_depth;
     std::size_t m_capacity;
+    std::size_t m_precision;
 
     std::shared_ptr<node_type> m_nodes;
-    std::vector<value_type> m_data;
+    container_type m_data;
 
     void
     assert_contains(const key_type& point) const
@@ -398,19 +410,20 @@ private:
 };
 
 
-template <typename Coordinate, typename V>
+template
+<typename Coordinate, typename T, class Container>
 class quadtree_iterator
 {
 public:
     using iterator_category = std::forward_iterator_tag;
 
-    using value_type = quadtree<Coordinate, V>;
+    using value_type = quadtree<Coordinate, T, Container>;
 
     using reference = value_type&;
 
     using pointer = value_type*;
 
-    using iterator = quadtree_iterator<Coordinate, V>;
+    using iterator = quadtree_iterator<Coordinate, T, Container>;
 
     explicit
     quadtree_iterator(const value_type& tree)
@@ -459,4 +472,4 @@ private:
 };
 
 
-};
+} // namespace torch_geopooling

@@ -1,7 +1,7 @@
-#include <geopool/tile.h>
+#include <torch_geopooling/tile.h>
 
 
-namespace geopool {
+namespace torch_geopooling {
 
 
 tile::tile()
@@ -50,4 +50,4 @@ tile::operator!=(const tile& rhs) const
 }
 
 
-}
+} // namespace torch_geopooling

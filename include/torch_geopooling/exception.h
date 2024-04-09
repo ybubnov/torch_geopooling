@@ -5,7 +5,7 @@
 #include <fmt/core.h>
 
 
-namespace geopool {
+namespace torch_geopooling {
 
 
 class exception: public std::exception {
@@ -77,4 +77,4 @@ out_of_range::out_of_range(const std::string& s)
 { }
 
 
-}
+} // namespace torch_geopooling

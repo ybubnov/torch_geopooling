@@ -1,10 +1,9 @@
 #pragma once
 
-
 #include <iostream>
 
 
-namespace geopool {
+namespace torch_geopooling {
 
 
 class tile {
@@ -28,7 +27,7 @@ public:
     operator!= (const tile& rhs) const;
 
     friend std::ostream&
-    operator<< (std::ostream& os, const tile& t)
+    operator<<(std::ostream& os, const tile& t)
     {
         os << "tile(" << t.m_z << ", " << t.m_x << ", " << t.m_y << ")";
         return os;
@@ -39,4 +38,4 @@ private:
 };
 
 
-}
+} // namespace torch_geopooling
