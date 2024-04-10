@@ -2,15 +2,17 @@
 
 #include <iostream>
 
+#include <torch_geopooling/functional.h>
+
 
 namespace torch_geopooling {
 
 
-class tile {
+class Tile {
 public:
-    tile();
+    Tile();
 
-    tile(std::size_t z, std::size_t x, std::size_t y);
+    Tile(std::size_t z, std::size_t x, std::size_t y);
 
     std::size_t z() const;
 
@@ -18,18 +20,20 @@ public:
 
     std::size_t y() const;
 
-    tile parent() const;
+    Tile parent() const;
+
+    Tile child(std::size_t x, std::size_t y) const;
 
     bool
-    operator== (const tile& rhs) const;
+    operator== (const Tile& rhs) const;
 
     bool
-    operator!= (const tile& rhs) const;
+    operator!= (const Tile& rhs) const;
 
     friend std::ostream&
-    operator<<(std::ostream& os, const tile& t)
+    operator<<(std::ostream& os, const Tile& t)
     {
-        os << "tile(" << t.m_z << ", " << t.m_x << ", " << t.m_y << ")";
+        os << "Tile(" << t.m_z << ", " << t.m_x << ", " << t.m_y << ")";
         return os;
     }
 
@@ -39,3 +43,26 @@ private:
 
 
 } // namespace torch_geopooling
+
+
+
+namespace std {
+
+
+template<>
+struct hash<torch_geopooling::Tile>
+{
+    using argument_type = torch_geopooling::Tile;
+
+    std::size_t
+    operator()(const argument_type& argument) const noexcept {
+        std::size_t seed = 0;
+        hash_combine(seed, argument.z());
+        hash_combine(seed, argument.x());
+        hash_combine(seed, argument.y());
+        return seed;
+    }
+};
+
+
+} // namespace std

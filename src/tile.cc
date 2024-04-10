@@ -4,47 +4,55 @@
 namespace torch_geopooling {
 
 
-tile::tile()
+Tile::Tile()
 : m_z(0), m_x(0), m_y(0)
 { }
 
 
-tile::tile(std::size_t z, std::size_t x, std::size_t y)
+Tile::Tile(std::size_t z, std::size_t x, std::size_t y)
 : m_z(z), m_x(x), m_y(y)
 { }
 
 
 std::size_t
-tile::z() const
+Tile::z() const
 { return m_z; }
 
 
 std::size_t
-tile::x() const
+Tile::x() const
 { return m_x; }
 
 
 std::size_t
-tile::y() const
+Tile::y() const
 { return m_y; }
 
 
-tile
-tile::parent() const
+Tile
+Tile::parent() const
 {
-    return tile(m_z - 1, m_x >> 1, m_y >> 1);
+    return Tile(m_z - 1, m_x >> 1, m_y >> 1);
+}
+
+
+Tile
+Tile::child(std::size_t x, std::size_t y) const
+{
+    // TODO: assert x, y;
+    return Tile(m_z + 1, m_x * 2 + x, m_y * 2 + y);
 }
 
 
 bool
-tile::operator==(const tile& rhs) const
+Tile::operator==(const Tile& rhs) const
 {
     return m_z == rhs.m_z && m_x == rhs.m_x && m_y == rhs.m_y;
 }
 
 
 bool
-tile::operator!=(const tile& rhs) const
+Tile::operator!=(const Tile& rhs) const
 {
     return !(*this == rhs);
 }

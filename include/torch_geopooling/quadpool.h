@@ -4,7 +4,7 @@
 #include <ATen/SparseCsrTensorUtils.h>
 #include <torch/torch.h>
 
-#include <torch_geopooling/quadtree.h>
+//#include <torch_geopooling/quadtree.h>
 
 
 namespace torch_geopooling {
@@ -13,24 +13,26 @@ namespace torch_geopooling {
 using namespace at::sparse_csr;
 
 
-class QuadTensor {
-public:
-    QuadTensor(
-        at::IntArrayRef quad,
-        std::size_t capacity = 1,
-        std::size_t depth = 17,
-        std::size_t precision = 7
-    );
-
-private:
-    SparseCsrTensor weight;
-    quadtree<double, double> indices;
-};
-
-
 /*
-torch::Tensor
-quad_pool(QuadTensor& indices, const torch::Tensor& input, bool training);
+std::tuple<SparseCsrTensor, SparseCsrTensor>
+empty_quad_pool(
+    at::IntArrayRef quadrect,
+    std::size_t capacity = 1,
+    std::size_t depth = 17,
+    std::size_t precision = 7
+);
+
+
+std::tuple<SparseCsrTensor, SparseCsrTensor, torch::Tensor>
+quad_pool(
+    const SparseCsrTensor& indices,
+    const SparseCsrTensor& weights,
+    const torch::Tensor& input,
+    std::size_t capacity = 1,
+    std::size_t depth = 17,
+    std::size_t precision = 7,
+    bool training = true,
+);
 */
 
 

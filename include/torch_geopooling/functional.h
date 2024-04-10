@@ -3,6 +3,18 @@
 #include <functional>
 
 
+namespace std {
+
+
+template<typename SizeT, typename T>
+void
+hash_combine(SizeT& seed, T value)
+{
+    std::hash<T> hash;
+    seed ^= hash(value) + 0x9e3779b9 + (seed<<6) + (seed>>2);
+}
+
+
 template<typename T>
 struct std::hash<std::pair<T, T>>
 {
@@ -10,9 +22,10 @@ struct std::hash<std::pair<T, T>>
 
     std::size_t
     operator()(const argument_type& argument) const noexcept {
-        std::size_t h1 = std::hash<T>{}(argument.first);
-        std::size_t h2 = std::hash<T>{}(argument.second);
-        return h1 ^ (h2 << 1);
+        std::size_t seed = 0;
+        hash_combine(seed, argument.first);
+        hash_combine(seed, argument.second);
+        return seed;
     }
 };
 
@@ -40,3 +53,6 @@ round(const std::pair<Arithmetic1, Arithmetic1>& pair, Arithmetic2 precision)
 {
     return std::make_pair(round(pair.first, precision), round(pair.second, precision));
 }
+
+
+} // namespace std
