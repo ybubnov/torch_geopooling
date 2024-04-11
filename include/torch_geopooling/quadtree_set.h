@@ -38,13 +38,13 @@ public:
     depth() const
     { return m_tile.z(); }
 
-    std::size_t
-    x() const
-    { return cell_size() * m_tile.x(); }
-
     exterior_type
     exterior() const
     { return m_exterior; }
+
+    std::size_t
+    x() const
+    { return cell_size() * m_tile.x(); }
 
     std::size_t
     y() const
@@ -104,8 +104,48 @@ public:
       m_nodes(),
       m_total_depth(0)
     {
-        Tile tile(0, 0, 0);
+        Tile tile = Tile::root;
         m_nodes.insert(std::make_pair(tile, node_type(tile, exterior, max_depth)));
+    }
+
+    template<typename InputIt>
+    QuadtreeSet(
+        InputIt first,
+        InputIt last,
+        const exterior_type& exterior,
+        std::size_t max_depth = 17,
+        std::size_t capacity = 1,
+        std::size_t precision = 7
+    )
+    : QuadtreeSet(exterior, max_depth, capacity, precision)
+    {
+        while (first != last) {
+            auto node_tile = *first;
+            auto node_exterior = make_exterior(exterior, node_tile);
+
+            m_nodes.insert(std::make_pair(
+                node_tile, node_type(node_tile, node_exterior, max_depth)
+            ));
+
+            first++;
+            m_total_depth = std::max(node_tile.z(), m_total_depth);
+        }
+
+        // Verify integrity of the resulting quadtree set by assuring that every children
+        // has a parent up until the root tile (0, 0, 0).
+        for (auto node : m_nodes) {
+            auto parent_tile = node.first.parent();
+
+            while (parent_tile != Tile::root) {
+                if (auto n = m_nodes.find(parent_tile); n == m_nodes.end()) {
+                    throw value_error(
+                        "QuadtreeSet: tile {} does not have a parent {}",
+                        node.first, parent_tile
+                    );
+                }
+                parent_tile = parent_tile.parent();
+            }
+        }
     }
 
     QuadtreeSet(const std::initializer_list<Coordinate> xywh)
@@ -117,7 +157,7 @@ public:
     bool
     contains(const key_type& point) const
     {
-        const auto node = m_nodes.at(Tile(0, 0, 0));
+        const auto node = m_nodes.at(Tile::root);
         return node.exterior().contains(point);
     }
 
@@ -137,7 +177,7 @@ public:
     {
         assert_contains(point);
 
-        Tile tile(0, 0, 0);
+        Tile tile = Tile::root;
         node_type* node = &m_nodes.at(tile);
 
         max_depth = std::min(max_depth, m_max_depth);
@@ -172,7 +212,7 @@ public:
         Tile node_tile = tile;
         auto node = m_nodes.find(node_tile);
 
-        while (node == m_nodes.end()) {
+        while (node == m_nodes.end() && node_tile != Tile::root) {
             node_tile = node_tile.parent();
             node = m_nodes.find(node_tile);
         }
@@ -210,6 +250,14 @@ private:
                 "quadtree: point ({}, {}) is outside of exterior geometry", point.first, point.second
             );
         }
+    }
+
+    exterior_type
+    make_exterior(const exterior_type exterior, const Tile& tile) const
+    {
+        auto width = exterior.width() / tile.z();
+        auto height = exterior.height() / tile.z();
+        return exterior_type(tile.x() * width, tile.y() * height, width, height);
     }
 
     bool

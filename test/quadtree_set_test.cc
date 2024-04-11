@@ -140,4 +140,41 @@ BOOST_AUTO_TEST_CASE(quadtree_set_find_by_tile)
 }
 
 
+BOOST_AUTO_TEST_CASE(quadtree_set_from_tiles)
+{
+    BOOST_TEST_MESSAGE("--- Initialize quadtree set from tiles");
+
+    std::vector<Tile> tiles = {
+        Tile(0, 0, 0),
+        Tile(1, 0, 0),
+        Tile(1, 1, 1),
+        Tile(2, 0, 0),
+    };
+
+    QuadtreeSet set(tiles.begin(), tiles.end(), quadrect(0.0, 0.0, 10.0, 10.0));
+
+    auto node1 = set.find(Tile(0, 0, 0));
+    BOOST_CHECK_EQUAL(node1.tile(), Tile(0, 0, 0));
+    BOOST_CHECK_EQUAL(node1.size(), 0);
+
+    auto node2 = set.find(Tile(3, 7, 7));
+    BOOST_CHECK_EQUAL(node2.tile(), Tile(1, 1, 1));
+    BOOST_CHECK_EQUAL(node2.size(), 0);
+}
+
+
+BOOST_AUTO_TEST_CASE(quadtree_set_missing_parent)
+{
+    BOOST_TEST_MESSAGE("--- Ensure quadtree set initialization fails on missing parent");
+
+    std::vector<Tile> tiles = {
+        Tile(0, 0, 0),
+        Tile(1, 1, 1),
+        Tile(2, 0, 0),
+    };
+
+    BOOST_CHECK_THROW(QuadtreeSet(tiles.begin(), tiles.end(), quadrect(0.0, 0.0, 10.0, 10.0)));
+}
+
+
 BOOST_AUTO_TEST_SUITE_END()

@@ -2,6 +2,8 @@
 
 #include <iostream>
 
+#include <fmt/core.h>
+
 #include <torch_geopooling/functional.h>
 
 
@@ -37,6 +39,7 @@ public:
         return os;
     }
 
+    const static Tile root;
 private:
     std::size_t m_z, m_x, m_y;
 };
@@ -66,3 +69,19 @@ struct hash<torch_geopooling::Tile>
 
 
 } // namespace std
+
+
+template<>
+struct fmt::formatter<torch_geopooling::Tile>
+{
+    template<typename ParseContext>
+    constexpr auto parse(ParseContext& context) {
+        return context.begin();
+    }
+
+    template<typename FormatContext>
+    auto format(torch_geopooling::Tile const& tile, FormatContext& context) const
+    {
+        return fmt::format_to(context.out(), "Tile({}, {}, {})", tile.z(), tile.x(), tile.y());
+    }
+};
