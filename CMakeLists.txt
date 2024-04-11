@@ -25,7 +25,7 @@ add_library(torch_geopooling SHARED ${torch_geopooling_SOURCES})
 set_target_properties(torch_geopooling PROPERTIES VERSION ${torch_geopooling_LIBRARY_VERSION})
 set_target_properties(torch_geopooling PROPERTIES SOVERSION ${torch_geopooling_LIBRARY_SOVERSION})
 target_link_libraries(torch_geopooling fmt::fmt)
-#target_link_libraries(torch_geopooling torch)
+target_link_libraries(torch_geopooling torch)
 
 
 # Install the library files.

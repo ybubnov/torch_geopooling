@@ -173,7 +173,10 @@ BOOST_AUTO_TEST_CASE(quadtree_set_missing_parent)
         Tile(2, 0, 0),
     };
 
-    BOOST_CHECK_THROW(QuadtreeSet(tiles.begin(), tiles.end(), quadrect(0.0, 0.0, 10.0, 10.0)));
+    BOOST_CHECK_THROW(
+        QuadtreeSet(tiles.begin(), tiles.end(), quadrect(0.0, 0.0, 10.0, 10.0)),
+        value_error
+    );
 }
 
 
