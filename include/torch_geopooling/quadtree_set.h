@@ -35,6 +35,10 @@ public:
     { return m_tile; }
 
     std::size_t
+    depth() const
+    { return m_tile.z(); }
+
+    std::size_t
     x() const
     { return cell_size() * m_tile.x(); }
 
@@ -94,7 +98,11 @@ public:
         std::size_t capacity = 1,
         std::size_t precision = 7
     )
-    : m_max_depth(max_depth), m_capacity(capacity), m_precision(precision), m_nodes()
+    : m_max_depth(max_depth),
+      m_capacity(capacity),
+      m_precision(precision),
+      m_nodes(),
+      m_total_depth(0)
     {
         Tile tile(0, 0, 0);
         m_nodes.insert(std::make_pair(tile, node_type(tile, exterior, max_depth)));
@@ -158,12 +166,41 @@ public:
         return *node;
     }
 
+    node_type&
+    find(const Tile& tile)
+    {
+        Tile node_tile = tile;
+        auto node = m_nodes.find(node_tile);
+
+        while (node == m_nodes.end()) {
+            node_tile = node_tile.parent();
+            node = m_nodes.find(node_tile);
+        }
+
+        return m_nodes.at(node_tile);
+    }
+
+    std::size_t
+    total_depth() const
+    { return m_total_depth; }
+
+    std::size_t
+    size() const
+    {
+        std::size_t num_elements = 0;
+        for (auto& value : m_nodes) {
+            num_elements += value.second.size();
+        }
+        return num_elements;
+    }
+
 private:
     std::unordered_map<Tile, node_type> m_nodes;
 
     std::size_t m_max_depth;
     std::size_t m_capacity;
     std::size_t m_precision;
+    std::size_t m_total_depth;
 
     void
     assert_contains(const key_type& point) const
@@ -198,6 +235,8 @@ private:
             for (std::size_t y : {0, 1}) {
                 auto tile = node.tile().child(x, y);
                 auto n = node_type(tile, quadrects.at(x, y), m_max_depth);
+
+                m_total_depth = std::max(tile.z(), m_total_depth);
                 m_nodes.insert(std::make_pair(tile, n));
             }
         }

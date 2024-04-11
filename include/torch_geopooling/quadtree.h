@@ -150,8 +150,8 @@ public:
         return tree.find(point, max_depth);
     }
 
-    quadtree<Coordinate, T>&
-    find(const class Tile& t)
+    quadtree<Coordinate, T, Container>&
+    find(const Tile& t)
     {
         std::size_t mid_width = 1 << t.z();
         mid_width >>= 1;
