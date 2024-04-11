@@ -98,6 +98,8 @@ public:
     : quadrect({xmin, ymin, width, height})
     { }
 
+    ~quadrect() = default;
+
     bool
     operator==(const quadrect& rhs) const
     {

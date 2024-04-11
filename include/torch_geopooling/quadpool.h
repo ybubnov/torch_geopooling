@@ -1,8 +1,8 @@
 #pragma once
 
-#include <ATen/SparseCsrTensorImpl.h>
-#include <ATen/SparseCsrTensorUtils.h>
-#include <torch/torch.h>
+//#include <ATen/SparseCsrTensorImpl.h>
+//#include <ATen/SparseCsrTensorUtils.h>
+//#include <torch/torch.h>
 
 //#include <torch_geopooling/quadtree.h>
 
@@ -10,7 +10,7 @@
 namespace torch_geopooling {
 
 
-using namespace at::sparse_csr;
+//using namespace at::sparse_csr;
 
 
 /*

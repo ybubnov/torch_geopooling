@@ -39,7 +39,7 @@ BOOST_AUTO_TEST_CASE(quadtree_set_find_empty)
 }
 
 
-BOOST_AUTO_TEST_CASE(quadtree_insert_and_find)
+BOOST_AUTO_TEST_CASE(quadtree_set_insert_and_find)
 {
     BOOST_TEST_MESSAGE("--- Find tree");
 

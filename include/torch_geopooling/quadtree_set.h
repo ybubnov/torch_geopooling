@@ -25,10 +25,12 @@ public:
     using point_iterator = typename container_type::iterator;
 
     QuadtreeNode(Tile tile, exterior_type exterior, std::size_t max_depth)
-    : m_tile(tile), m_exterior(exterior), m_max_depth(max_depth)
+    : m_tile(tile), m_exterior(exterior), m_max_depth(max_depth), m_points()
     { }
 
-    Tile
+    ~QuadtreeNode() = default;
+
+    const Tile&
     tile() const
     { return m_tile; }
 
@@ -84,8 +86,10 @@ public:
 
     using node_type = QuadtreeNode<Coordinate>;
 
+    using exterior_type = quadrect<Coordinate>;
+
     QuadtreeSet(
-        const quadrect<Coordinate>& exterior,
+        const exterior_type& exterior,
         std::size_t max_depth = 17,
         std::size_t capacity = 1,
         std::size_t precision = 7
@@ -99,6 +103,8 @@ public:
     QuadtreeSet(const std::initializer_list<Coordinate> xywh)
     : QuadtreeSet(quadrect(xywh))
     { }
+
+    ~QuadtreeSet() = default;
 
     bool
     contains(const key_type& point) const
@@ -124,12 +130,12 @@ public:
         assert_contains(point);
 
         Tile tile(0, 0, 0);
-        node_type& node = m_nodes.at(tile);
+        node_type* node = &m_nodes.at(tile);
 
         max_depth = std::min(max_depth, m_max_depth);
 
-        while (tile.z() <= max_depth) {
-            auto centroid = node.exterior().centroid();
+        while (tile.z() < max_depth) {
+            auto centroid = node->exterior().centroid();
 
             std::size_t x = 0, y = 0;
             if (point.first > centroid.first) {
@@ -140,16 +146,16 @@ public:
             }
 
             auto child_tile = tile.child(x, y);
+
             if (auto n = m_nodes.find(child_tile); n != m_nodes.end()) {
                 tile = n->first;
-                node = n->second;
+                node = &n->second;
             } else {
                 break;
             }
-
         }
 
-        return node;
+        return *node;
     }
 
 private:
@@ -191,20 +197,13 @@ private:
         for (std::size_t x : {0, 1}) {
             for (std::size_t y : {0, 1}) {
                 auto tile = node.tile().child(x, y);
-                auto node = node_type(tile, quadrects.at(x, y), m_max_depth);
-                m_nodes.insert(std::make_pair(tile, node));
+                auto n = node_type(tile, quadrects.at(x, y), m_max_depth);
+                m_nodes.insert(std::make_pair(tile, n));
             }
         }
 
-        for (auto point: node) {
-            std::cout << "POINT(" << point.first << ", " << point.second << ")" << std::endl;
-            auto& n = find(point);
-            std::cout << "  tile" << n.tile() << std::endl;
-        /*
-            if (n.tile() != node.tile()) {
-                n.insert(point);
-            }
-        */
+        for (auto point : node) {
+            insert(point);
         }
 
         node.clear();
