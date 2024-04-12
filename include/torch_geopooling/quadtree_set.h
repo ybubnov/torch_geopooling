@@ -1,5 +1,7 @@
 #pragma once
 
+#include <limits>
+#include <optional>
 #include <queue>
 #include <initializer_list>
 #include <unordered_map>
@@ -8,6 +10,7 @@
 #include <torch_geopooling/functional.h>
 #include <torch_geopooling/tile.h>
 #include <torch_geopooling/quadrect.h>
+#include <torch_geopooling/quadtree_options.h>
 
 
 namespace torch_geopooling {
@@ -94,18 +97,15 @@ public:
 
     QuadtreeSet(
         const exterior_type& exterior,
-        std::size_t max_depth = 17,
-        std::size_t capacity = 1,
-        std::size_t precision = 7
+        std::optional<QuadtreeOptions> options = std::nullopt
     )
-    : m_max_depth(max_depth),
-      m_capacity(capacity),
-      m_precision(precision),
+    : m_options(options.value_or(QuadtreeOptions())),
       m_nodes(),
       m_total_depth(0)
     {
         Tile tile = Tile::root;
-        m_nodes.insert(std::make_pair(tile, node_type(tile, exterior, max_depth)));
+        node_type node(tile, exterior, m_options.max_depth());
+        m_nodes.insert(std::make_pair(tile, node));
     }
 
     template<typename InputIt>
@@ -113,19 +113,16 @@ public:
         InputIt first,
         InputIt last,
         const exterior_type& exterior,
-        std::size_t max_depth = 17,
-        std::size_t capacity = 1,
-        std::size_t precision = 7
+        std::optional<QuadtreeOptions> options = std::nullopt
     )
-    : QuadtreeSet(exterior, max_depth, capacity, precision)
+    : QuadtreeSet(exterior, options)
     {
         while (first != last) {
             auto node_tile = *first;
             auto node_exterior = make_exterior(exterior, node_tile);
+            auto node = node_type(node_tile, node_exterior, m_options.max_depth());
 
-            m_nodes.insert(std::make_pair(
-                node_tile, node_type(node_tile, node_exterior, max_depth)
-            ));
+            m_nodes.insert(std::make_pair(node_tile, node));
 
             first++;
             m_total_depth = std::max(node_tile.z(), m_total_depth);
@@ -164,7 +161,11 @@ public:
     void
     insert(const key_type& key)
     {
-        auto point = std::round(key, m_precision);
+        auto point = key;
+        if (m_options.has_precision()) {
+            point = std::round(key, m_options.precision());
+        }
+
         assert_contains(point);
 
         auto& node = find(point);
@@ -173,14 +174,14 @@ public:
     }
 
     node_type&
-    find(const key_type& point, std::size_t max_depth = -1)
+    find(const key_type& point, std::optional<std::size_t> max_depth = std::nullopt)
     {
         assert_contains(point);
 
         Tile tile = Tile::root;
         node_type* node = &m_nodes.at(tile);
 
-        max_depth = std::min(max_depth, m_max_depth);
+        max_depth = std::min(max_depth.value_or(m_total_depth), m_options.max_depth());
 
         while (tile.z() < max_depth) {
             auto centroid = node->exterior().centroid();
@@ -236,10 +237,8 @@ public:
 
 private:
     std::unordered_map<Tile, node_type> m_nodes;
+    QuadtreeOptions m_options;
 
-    std::size_t m_max_depth;
-    std::size_t m_capacity;
-    std::size_t m_precision;
     std::size_t m_total_depth;
 
     void
@@ -274,7 +273,11 @@ private:
     void
     subdivide(node_type& node)
     {
-        if (node.size() <= m_capacity || node.tile().z() >= m_max_depth || has_children(node)) {
+        if (
+            node.size() <= m_options.capacity() ||
+            node.tile().z() >= m_options.max_depth() ||
+            has_children(node)
+        ) {
             return;
         }
 
@@ -282,7 +285,7 @@ private:
         for (std::size_t x : {0, 1}) {
             for (std::size_t y : {0, 1}) {
                 auto tile = node.tile().child(x, y);
-                auto n = node_type(tile, quadrects.at(x, y), m_max_depth);
+                auto n = node_type(tile, quadrects.at(x, y), m_options.max_depth());
 
                 m_total_depth = std::max(tile.z(), m_total_depth);
                 m_nodes.insert(std::make_pair(tile, n));

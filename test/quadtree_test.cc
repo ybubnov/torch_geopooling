@@ -12,13 +12,13 @@ using namespace torch_geopooling;
 BOOST_AUTO_TEST_SUITE(TestQuadtree)
 
 
-BOOST_AUTO_TEST_CASE(quadtree_is_leaf)
+BOOST_AUTO_TEST_CASE(quadtree_is_terminal)
 {
-    BOOST_TEST_MESSAGE("--- Empty quadtree is leaf");
+    BOOST_TEST_MESSAGE("--- Empty quadtree is terminal");
 
     quadtree tree({-180.0, -90.0, 360.0, 180.0});
 
-    BOOST_CHECK(tree.is_leaf());
+    BOOST_CHECK(tree.is_terminal());
 }
 
 

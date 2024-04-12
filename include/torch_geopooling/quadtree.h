@@ -72,7 +72,7 @@ public:
     { return Tile(m_z, m_x, m_y); }
 
     inline bool
-    is_leaf() const
+    is_terminal() const
     { return m_nodes == nullptr; }
 
     const quadrect<Coordinate>&
@@ -159,7 +159,7 @@ public:
         std::size_t xmid = mid_width, ymid = mid_width;
 
         auto node = this;
-        while (!node->is_leaf() && t.z() > node->m_z) {
+        while (!node->is_terminal() && t.z() > node->m_z) {
             mid_width >>= 1;
 
             std::size_t x = 0, y = 0;
@@ -308,7 +308,7 @@ private:
     next()
     {
         auto tree = m_queue.front();
-        if (!tree.is_leaf()) {
+        if (!tree.is_terminal()) {
             for (auto const& node: *tree.m_nodes) {
                 m_queue.push(node);
             }
