@@ -119,13 +119,13 @@ public:
     : quadtree_set(exterior, options)
     {
         while (first != last) {
-            auto node_tile = *first;
+            Tile node_tile(*first);
             auto node_exterior = make_exterior(exterior, node_tile);
             auto node = node_type(node_tile, node_exterior, m_options.max_depth());
 
             m_nodes.insert(std::make_pair(node_tile, node));
 
-            first++;
+            ++first;
             m_total_depth = std::max(node_tile.z(), m_total_depth);
         }
 

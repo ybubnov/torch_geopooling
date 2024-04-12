@@ -16,6 +16,8 @@ public:
 
     Tile(std::size_t z, std::size_t x, std::size_t y);
 
+    Tile(const std::array<std::size_t, 3>& zxy);
+
     std::size_t z() const;
 
     std::size_t x() const;

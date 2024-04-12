@@ -30,6 +30,11 @@ Tile::Tile(std::size_t z, std::size_t x, std::size_t y)
 }
 
 
+Tile::Tile(const std::array<std::size_t, 3>& zxy)
+: Tile(zxy[0], zxy[1], zxy[1])
+{ }
+
+
 std::size_t
 Tile::z() const
 { return m_z; }

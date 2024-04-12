@@ -65,23 +65,23 @@ public:
     using value_type = T;
     using point_type = std::pair<T, T>;
 
-    quadrect(const std::initializer_list<value_type>& list)
+    quadrect(const std::vector<value_type>& vec)
     {
-        auto list_size = list.size();
-        if (list_size != 4) {
-            throw value_error("QuadRect: size of initializer list ({}) should be {}", list_size);
+        auto vec_size = vec.size();
+        if (vec_size != 4) {
+            throw value_error("quadrect: size of initializer list ({}) should be {}", vec_size);
         }
 
         std::array<value_type, 4> xywh;
-        std::copy(list.begin(), list.end(), xywh.begin());
+        std::copy(vec.begin(), vec.end(), xywh.begin());
 
         auto [x, y, w, h] = xywh;
 
         if (w <= T(0)) {
-            throw value_error("QuadRect: width ({}) should be a positive number", w);
+            throw value_error("quadrect: width ({}) should be a positive number", w);
         }
         if (h <= T(0)) {
-            throw value_error("QuadRect: height ({}) should be a positive number", h);
+            throw value_error("quadrect: height ({}) should be a positive number", h);
         }
 
         m_xmin = x;
@@ -89,6 +89,10 @@ public:
         m_xmax = x + w;
         m_ymax = y + h;
     }
+
+    quadrect(const std::initializer_list<value_type>& list)
+    : quadrect(std::vector(list))
+    { }
 
     quadrect(const std::tuple<value_type, value_type, value_type, value_type>& xywh)
     : quadrect(std::get<0>(xywh), std::get<1>(xywh), std::get<2>(xywh), std::get<3>(xywh))

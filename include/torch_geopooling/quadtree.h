@@ -270,13 +270,13 @@ class quadtree_iterator
 public:
     using iterator_category = std::forward_iterator_tag;
 
+    using iterator = quadtree_iterator<Coordinate, T, Container>;
+
     using value_type = quadtree<Coordinate, T, Container>;
 
     using reference = value_type&;
 
     using pointer = value_type*;
-
-    using iterator = quadtree_iterator<Coordinate, T, Container>;
 
     explicit
     quadtree_iterator(const value_type& tree)
