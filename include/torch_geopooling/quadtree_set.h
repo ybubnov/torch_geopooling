@@ -17,7 +17,7 @@ namespace torch_geopooling {
 
 
 template<typename Coordinate>
-class QuadtreeNode {
+class quadtree_node {
 public:
     using key_type = std::pair<Coordinate, Coordinate>;
 
@@ -27,11 +27,11 @@ public:
 
     using point_iterator = typename container_type::iterator;
 
-    QuadtreeNode(Tile tile, exterior_type exterior, std::size_t max_depth)
+    quadtree_node(Tile tile, exterior_type exterior, std::size_t max_depth)
     : m_tile(tile), m_exterior(exterior), m_max_depth(max_depth), m_points()
     { }
 
-    ~QuadtreeNode() = default;
+    ~quadtree_node() = default;
 
     const Tile&
     tile() const
@@ -87,21 +87,22 @@ private:
 
 
 template<typename Coordinate>
-class QuadtreeSet {
+class quadtree_set {
 public:
     using key_type = std::pair<Coordinate, Coordinate>;
 
-    using node_type = QuadtreeNode<Coordinate>;
+    using node_type = quadtree_node<Coordinate>;
 
     using exterior_type = quadrect<Coordinate>;
 
-    QuadtreeSet(
+    quadtree_set(
         const exterior_type& exterior,
-        std::optional<QuadtreeOptions> options = std::nullopt
+        std::optional<quadtree_options> options = std::nullopt
     )
-    : m_options(options.value_or(QuadtreeOptions())),
+    : m_options(options.value_or(quadtree_options())),
       m_nodes(),
-      m_total_depth(0)
+      m_total_depth(0),
+      m_num_terminal_nodes(0)
     {
         Tile tile = Tile::root;
         node_type node(tile, exterior, m_options.max_depth());
@@ -109,13 +110,13 @@ public:
     }
 
     template<typename InputIt>
-    QuadtreeSet(
+    quadtree_set(
         InputIt first,
         InputIt last,
         const exterior_type& exterior,
-        std::optional<QuadtreeOptions> options = std::nullopt
+        std::optional<quadtree_options> options = std::nullopt
     )
-    : QuadtreeSet(exterior, options)
+    : quadtree_set(exterior, options)
     {
         while (first != last) {
             auto node_tile = *first;
@@ -136,7 +137,7 @@ public:
             while (parent_tile != Tile::root) {
                 if (auto n = m_nodes.find(parent_tile); n == m_nodes.end()) {
                     throw value_error(
-                        "QuadtreeSet: tile {} does not have a parent {}",
+                        "quadtree_set: tile {} does not have a parent {}",
                         node.first, parent_tile
                     );
                 }
@@ -145,11 +146,14 @@ public:
         }
     }
 
-    QuadtreeSet(const std::initializer_list<Coordinate> xywh)
-    : QuadtreeSet(quadrect(xywh))
+    quadtree_set(
+        const std::initializer_list<Coordinate> xywh,
+        std::optional<quadtree_options> options = std::nullopt
+    )
+    : quadtree_set(exterior_type(xywh), options)
     { }
 
-    ~QuadtreeSet() = default;
+    ~quadtree_set() = default;
 
     bool
     contains(const key_type& point) const
@@ -163,7 +167,7 @@ public:
     {
         auto point = key;
         if (m_options.has_precision()) {
-            point = std::round(key, m_options.precision());
+            point = std::round(point, m_options.precision());
         }
 
         assert_contains(point);
@@ -181,7 +185,7 @@ public:
         Tile tile = Tile::root;
         node_type* node = &m_nodes.at(tile);
 
-        max_depth = std::min(max_depth.value_or(m_total_depth), m_options.max_depth());
+        max_depth = std::min(max_depth.value_or(m_total_depth + 1), m_options.max_depth());
 
         while (tile.z() < max_depth) {
             auto centroid = node->exterior().centroid();
@@ -237,16 +241,21 @@ public:
 
 private:
     std::unordered_map<Tile, node_type> m_nodes;
-    QuadtreeOptions m_options;
+    quadtree_options m_options;
 
     std::size_t m_total_depth;
+
+    // Terminal nodes are updated once the split of the node happens (it's always increases
+    // the number of terminal node by 3).
+    std::size_t m_num_terminal_nodes;
 
     void
     assert_contains(const key_type& point) const
     {
         if (!contains(point)) {
             throw value_error(
-                "quadtree: point ({}, {}) is outside of exterior geometry", point.first, point.second
+                "quadtree_set: point ({}, {}) is outside of exterior geometry",
+                point.first, point.second
             );
         }
     }
@@ -273,7 +282,13 @@ private:
     void
     subdivide(node_type& node)
     {
+        auto full = (
+            m_options.hash_max_terminal_nodes() &&
+            m_options.max_terminal_nodes() >= m_num_terminal_nodes
+        );
+
         if (
+            full ||
             node.size() <= m_options.capacity() ||
             node.tile().z() >= m_options.max_depth() ||
             has_children(node)
@@ -287,10 +302,14 @@ private:
                 auto tile = node.tile().child(x, y);
                 auto n = node_type(tile, quadrects.at(x, y), m_options.max_depth());
 
-                m_total_depth = std::max(tile.z(), m_total_depth);
                 m_nodes.insert(std::make_pair(tile, n));
+                m_total_depth = std::max(tile.z(), m_total_depth);
+                m_num_terminal_nodes += 1;
             }
         }
+
+        // Current node is no longer terminal, therefore subtract -1 here.
+        m_num_terminal_nodes -= 1;
 
         for (auto point : node) {
             insert(point);

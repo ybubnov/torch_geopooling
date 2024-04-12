@@ -7,55 +7,51 @@
 namespace torch_geopooling {
 
 
-struct QuadtreeOptions {
+struct quadtree_options {
 
-    QuadtreeOptions()
-     : m_max_depth(17),
-       m_capacity(1),
-       m_max_terminal_nodes(std::nullopt),
-       m_precision(std::nullopt)
+    quadtree_options()
+    : m_max_depth(17),
+      m_capacity(1),
+      m_max_terminal_nodes(std::nullopt),
+      m_precision(std::nullopt)
     { }
 
     bool
     hash_max_terminal_nodes() const noexcept
-    {
-        return m_max_terminal_nodes.has_value();
-    }
+    { return m_max_terminal_nodes.has_value(); }
 
     bool
     has_precision() const noexcept
-    {
-        return m_precision.has_value();
-    }
+    { return m_precision.has_value(); }
 
-    QuadtreeOptions
+    quadtree_options
     max_depth(std::size_t max_depth) const noexcept
     {
-        QuadtreeOptions r = *this;
+        quadtree_options r = *this;
         r.set_max_depth(max_depth);
         return r;
     }
 
-    QuadtreeOptions
+    quadtree_options
     capacity(std::size_t capacity) const noexcept
     {
-        QuadtreeOptions r = *this;
+        quadtree_options r = *this;
         r.set_capacity(capacity);
         return r;
     }
 
-    QuadtreeOptions
+    quadtree_options
     max_terminal_nodes(std::size_t max_terminal_nodes) const noexcept
     {
-        QuadtreeOptions r = *this;
+        quadtree_options r = *this;
         r.set_max_terminal_nodes(max_terminal_nodes);
         return r;
     }
 
-    QuadtreeOptions
+    quadtree_options
     precision(std::size_t precision) const noexcept
     {
-        QuadtreeOptions r = *this;
+        quadtree_options r = *this;
         r.set_precision(precision);
         return r;
     }

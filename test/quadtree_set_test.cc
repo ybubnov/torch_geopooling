@@ -9,14 +9,14 @@
 using namespace torch_geopooling;
 
 
-BOOST_AUTO_TEST_SUITE(TestQuadtreeSet)
+BOOST_AUTO_TEST_SUITE(Testquadtree_set)
 
 
 BOOST_AUTO_TEST_CASE(quadtree_set_contains)
 {
     BOOST_TEST_MESSAGE("--- Check empty quadtree set contains points");
 
-    QuadtreeSet set({0, 0, 10, 10});
+    quadtree_set set({0, 0, 10, 10});
 
     BOOST_CHECK(set.contains(std::pair(0, 0)));
     BOOST_CHECK(set.contains(std::pair(0, 10)));
@@ -32,7 +32,7 @@ BOOST_AUTO_TEST_CASE(quadtree_set_find_in_empty)
 {
     BOOST_TEST_MESSAGE("--- Find nodes in empty quadtree set");
 
-    QuadtreeSet set({0, 0, 10, 10});
+    quadtree_set set({0, 0, 10, 10});
 
     auto node = set.find(std::pair(2, 2));
     BOOST_CHECK_EQUAL(node.exterior(), quadrect(0, 0, 10, 10));
@@ -43,7 +43,7 @@ BOOST_AUTO_TEST_CASE(quadtree_set_insert_and_find)
 {
     BOOST_TEST_MESSAGE("--- Insert point and find node in quatree set");
 
-    QuadtreeSet set({-10.0, -10.0, 20.0, 20.0});
+    quadtree_set set({-10.0, -10.0, 20.0, 20.0});
     set.insert(std::make_pair(0.0, 0.0));
     set.insert(std::make_pair(1.0, 1.0));
     set.insert(std::make_pair(1.5, 1.5));
@@ -62,7 +62,7 @@ BOOST_AUTO_TEST_CASE(quadtree_set_insert_depth_1)
 {
     BOOST_TEST_MESSAGE("--- Quadtree set of depth 1");
 
-    QuadtreeSet set({0, 0, 10, 10});
+    quadtree_set set({0, 0, 10, 10});
 
     set.insert(std::make_pair(1, 1));
     set.insert(std::make_pair(1, 9));
@@ -78,7 +78,7 @@ BOOST_AUTO_TEST_CASE(quadtree_set_insert_depth_3)
 {
     BOOST_TEST_MESSAGE("--- Quadtree set of depth 3");
 
-    QuadtreeSet set({0.0, 0.0, 10.0, 10.0});
+    quadtree_set set({0.0, 0.0, 10.0, 10.0});
 
     set.insert(std::make_pair(1.0, 1.0));
     set.insert(std::make_pair(1.7, 1.7));
@@ -114,7 +114,7 @@ BOOST_AUTO_TEST_CASE(quadtree_set_find_by_tile)
 {
     BOOST_TEST_MESSAGE("--- Find node by tile in non-empty quadtree set");
 
-    QuadtreeSet set({0.0, 0.0, 10.0, 10.0});
+    quadtree_set set({0.0, 0.0, 10.0, 10.0});
 
     set.insert(std::make_pair(1.0, 1.0));
     set.insert(std::make_pair(1.7, 1.7));
@@ -151,7 +151,7 @@ BOOST_AUTO_TEST_CASE(quadtree_set_from_tiles)
         Tile(2, 0, 0),
     };
 
-    QuadtreeSet set(tiles.begin(), tiles.end(), quadrect(0.0, 0.0, 10.0, 10.0));
+    quadtree_set set(tiles.begin(), tiles.end(), quadrect(0.0, 0.0, 10.0, 10.0));
 
     auto node1 = set.find(Tile(0, 0, 0));
     BOOST_CHECK_EQUAL(node1.tile(), Tile(0, 0, 0));
@@ -174,7 +174,7 @@ BOOST_AUTO_TEST_CASE(quadtree_set_missing_parent)
     };
 
     BOOST_CHECK_THROW(
-        QuadtreeSet(tiles.begin(), tiles.end(), quadrect(0.0, 0.0, 10.0, 10.0)),
+        quadtree_set(tiles.begin(), tiles.end(), quadrect(0.0, 0.0, 10.0, 10.0)),
         value_error
     );
 }

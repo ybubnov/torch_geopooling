@@ -4,6 +4,7 @@
 #include <initializer_list>
 #include <iostream>
 #include <iterator>
+#include <optional>
 #include <stdexcept>
 #include <queue>
 #include <unordered_map>
@@ -12,6 +13,7 @@
 #include <torch_geopooling/exception.h>
 #include <torch_geopooling/functional.h>
 #include <torch_geopooling/quadrect.h>
+#include <torch_geopooling/quadtree_options.h>
 #include <torch_geopooling/tile.h>
 
 
@@ -44,44 +46,41 @@ public:
 
     using node_iterator = quadtree_iterator<Coordinate, T, Container>;
 
-    quadtree(const std::initializer_list<Coordinate> xywh)
-    : quadtree(quadrect(xywh))
+    using exterior_type = quadrect<Coordinate>;
+
+    quadtree(
+        const exterior_type& exterior,
+        const Tile& tile = Tile::root,
+        std::optional<quadtree_options> options = std::nullopt
+    )
+    : m_exterior(exterior),
+      m_tile(tile),
+      m_options(options.value_or(quadtree_options())),
+      m_nodes(nullptr)
     { }
 
     quadtree(
-        const quadrect<Coordinate>& quad,
-        std::size_t max_depth = 17,
-        std::size_t capacity = 1,
-        std::size_t z = 0,
-        std::size_t x = 0,
-        std::size_t y = 0,
-        std::size_t precision = 7
+        const std::initializer_list<Coordinate> xywh,
+        std::optional<quadtree_options> options = std::nullopt
     )
-    : m_quadrect(quad),
-      m_max_depth(max_depth),
-      m_capacity(capacity),
-      m_z(z),
-      m_x(x),
-      m_y(y),
-      m_nodes(nullptr),
-      m_precision(precision)
+    : quadtree(exterior_type(xywh), Tile::root, options)
     { }
 
     Tile
     tile() const
-    { return Tile(m_z, m_x, m_y); }
+    { return m_tile; }
 
     inline bool
     is_terminal() const
     { return m_nodes == nullptr; }
 
-    const quadrect<Coordinate>&
+    const exterior_type&
     exterior() const
-    { return m_quadrect; }
+    { return m_exterior; }
 
     bool
     contains(const key_type& point) const
-    { return m_quadrect.contains(point); }
+    { return m_exterior.contains(point); }
 
     node_iterator
     begin() const
@@ -101,14 +100,14 @@ public:
 
     std::size_t
     depth() const
-    { return m_z; }
+    { return m_tile.z(); }
 
     std::size_t
     total_depth() const
     {
         std::size_t depth = 0;
         for (auto const& node : std::as_const(*this)) {
-            depth = std::max(depth, node.m_z);
+            depth = std::max(depth, node.m_tile.z());
         }
         return depth;
     }
@@ -116,7 +115,11 @@ public:
     void
     insert(const value_type& value)
     {
-        auto point = round(value.first, m_precision);
+        auto point = value.first;
+        if (m_options.has_precision()) {
+            point = round(point, m_options.precision());
+        }
+
         assert_contains(point);
 
         auto& node = find(point);
@@ -128,16 +131,17 @@ public:
     insert(const key_type& point, const mapped_type& value)
     { insert(std::make_pair(point, value)); }
 
-    quadtree<Coordinate, T>&
-    find(const key_type& point, std::size_t max_depth = -1)
+    quadtree<Coordinate, T, Container>&
+    find(const key_type& point, std::optional<std::size_t> max_depth = std::nullopt)
     {
         assert_contains(point);
 
-        if (((m_z >= max_depth) && max_depth >= 0) || m_nodes == nullptr) {
+        auto maximum_depth = max_depth.value_or(m_options.max_depth());
+        if (((m_tile.z() >= maximum_depth) && maximum_depth >= 0) || m_nodes == nullptr) {
             return *this;
         }
 
-        auto centroid = m_quadrect.centroid();
+        auto centroid = m_exterior.centroid();
         std::size_t x = 0, y = 0;
         if (point.first > centroid.first) {
             x += 1;
@@ -159,7 +163,7 @@ public:
         std::size_t xmid = mid_width, ymid = mid_width;
 
         auto node = this;
-        while (!node->is_terminal() && t.z() > node->m_z) {
+        while (!node->is_terminal() && t.z() > node->m_tile.z()) {
             mid_width >>= 1;
 
             std::size_t x = 0, y = 0;
@@ -183,7 +187,7 @@ public:
     }
 
     const quadtree<Coordinate, T>&
-    find(const key_type& point, std::size_t max_depth = -1) const
+    find(const key_type& point, std::optional<std::size_t> max_depth = std::nullopt) const
     { return find(point, max_depth); }
 
     std::size_t
@@ -199,15 +203,12 @@ public:
 private:
     friend class quadtree_iterator<Coordinate, T, Container>;
 
-    quadrect<Coordinate> m_quadrect;
-
-    std::size_t m_z, m_x, m_y;
-    std::size_t m_max_depth;
-    std::size_t m_capacity;
-    std::size_t m_precision;
-
     std::shared_ptr<node_type> m_nodes;
     container_type m_data;
+    exterior_type m_exterior;
+
+    quadtree_options m_options;
+    Tile m_tile;
 
     void
     assert_contains(const key_type& point) const
@@ -220,28 +221,32 @@ private:
     }
 
     quadtree<Coordinate, T>
-    make_subtree(quad<quadrect<Coordinate>>& quadrects, std::size_t x, std::size_t y) const
+    make_subtree(quad<exterior_type>& exteriors, std::size_t x, std::size_t y) const
     {
-        return quadtree(quadrects.at(x, y), m_max_depth, m_capacity, m_z+1, m_x*2+x, m_y*2+y);
+        return quadtree(exteriors.at(x, y), m_tile.child(x, y), m_options);
     }
 
     void
     subdivide()
     {
-        if (m_nodes != nullptr || m_data.size() <= m_capacity || m_z >= m_max_depth) {
+        if (
+            m_nodes != nullptr ||
+            m_data.size() <= m_options.capacity() ||
+            m_tile.z() >= m_options.max_depth()
+        ) {
             return;
         }
 
         // Symmetrically split the quad into the equal-area elements and move
         // the data from the parent node to sub-nodes. At the end, clear the
         // data from the parent.
-        quad<quadrect<Coordinate>> quadrects = m_quadrect.symmetric_split();
+        quad<exterior_type> exteriors = m_exterior.symmetric_split();
 
         node_type nodes(
-            make_subtree(quadrects, 0, 0),
-            make_subtree(quadrects, 0, 1),
-            make_subtree(quadrects, 1, 0),
-            make_subtree(quadrects, 1, 1)
+            make_subtree(exteriors, 0, 0),
+            make_subtree(exteriors, 0, 1),
+            make_subtree(exteriors, 1, 0),
+            make_subtree(exteriors, 1, 1)
         );
 
         m_nodes = std::make_shared<node_type>(std::move(nodes));
