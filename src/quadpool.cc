@@ -1,5 +1,6 @@
 #include <array>
 #include <iterator>
+#include <vector>
 
 #include <ATen/TensorAccessor.h>
 
@@ -81,7 +82,7 @@ private:
 };
 
 
-void
+torch::Tensor
 quad_pool2d(
     const torch::Tensor& tiles,
     const torch::Tensor& input,
@@ -93,21 +94,21 @@ quad_pool2d(
     std::optional<std::size_t> precision
 )
 {
-    TORCH_CHECK(tiles.dim() == 2, "quad_pool2d only supports 2D tiles, got: ", tiles.dim(), "D");
+    TORCH_CHECK(tiles.dim() == 2, "quad_pool2d only supports 2D tiles, got ", tiles.dim(), "D");
     TORCH_CHECK(tiles.size(1) == 3, "quad_pool2d: tiles must be three-element tuples");
     TORCH_CHECK(
         tiles.dtype() == torch::kInt32,
         "quad_pool2d only supports Int32 tiles, got: ", tiles.dtype()
     );
 
-    TORCH_CHECK(input.dim() == 2, "quad_pool2d only supports 2D input, got: ", input.dim(), "D");
+    TORCH_CHECK(input.dim() == 2, "quad_pool2d only supports 2D input, got ", input.dim(), "D");
     TORCH_CHECK(input.size(1) == 2, "quad_pool2d: input must be two-element tuples");
     TORCH_CHECK(
         input.dtype() == torch::kFloat32,
         "quad_pool2d only supports Float32 input, got: ", input.dtype()
     );
 
-    TORCH_CHECK(weight.dim() == 1, "quad_pool2d only supports 1D weight, got: ", weight.dim(), "D");
+    TORCH_CHECK(weight.dim() == 1, "quad_pool2d only supports 1D weight, got ", weight.dim(), "D");
     TORCH_CHECK(exterior.size() == 4, "quad_pool2d: must be a tuple of four floats");
 
     auto options = quadtree_options()
@@ -119,14 +120,42 @@ quad_pool2d(
     tensor_iterator2d<int32_t, 3> tiles_it(tiles);
     quadtree_set<float> set(tiles_it.begin(), tiles_it.end(), exterior.vec(), options);
 
+    torch::Tensor out_tiles;
+
     if (training) {
         tensor_iterator2d<float, 2> input_it(input);
         set.insert(input_it.begin(), input_it.end());
+
+        // Tiles are changing only in case of insert operation, therefore, extract tiles
+        // from the set only in case of insert operation. Otherwise, just return the same
+        // input tiles as a result.
+        std::vector<torch::Tensor> out_tiles_rows;
+
+        for (auto inode = set.ibegin(); inode != set.iend(); ++inode) {
+            auto tile = (*inode).tile();
+            out_tiles_rows.push_back(torch::tensor(tile.vec<int32_t>(), tiles.options()));
+        }
+
+        out_tiles = torch::stack(out_tiles_rows);
+    } else {
+        out_tiles = tiles;
     }
+
+    // tensor_iterator2d<float, 2> points(input);
+    // std::vector<std::array<int, 2>> weight_indices;
+
+    // for (const auto& point : points) {
+    //     const auto& node = set.find(point);
+    //     std::size_t cell_size = (1 << (options.max_depth() - node.tile().z()));
+
+    //     weight_indices.push_back({cell_size * node.tile().x(), cell_size * node.tile().y()});
+    // }
 
     std::cout << "quad_pool2d size = " << set.size() << std::endl;
     std::cout << "quad_pool2d exterior = " << set.exterior() << std::endl;
     std::cout << "quad_pool2d depth = " << set.total_depth() << std::endl;
+
+    return out_tiles;
 }
 
 

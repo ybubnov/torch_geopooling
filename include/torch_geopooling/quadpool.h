@@ -9,7 +9,7 @@
 namespace torch_geopooling {
 
 
-void
+torch::Tensor
 quad_pool2d(
     const torch::Tensor& tiles,
     const torch::Tensor& input,

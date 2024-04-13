@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <iostream>
+#include <vector>
 
 #include <fmt/core.h>
 
@@ -48,11 +49,23 @@ public:
 
     Tile child(std::size_t x, std::size_t y) const;
 
-    bool
-    operator== (const Tile& rhs) const;
+    template<typename T>
+    std::vector<T>
+    vec()
+    {
+        std::vector<T> zxy({
+            static_cast<T>(m_z),
+            static_cast<T>(m_y),
+            static_cast<T>(m_x)
+        });
+        return zxy;
+    }
 
     bool
-    operator!= (const Tile& rhs) const;
+    operator==(const Tile& rhs) const;
+
+    bool
+    operator!=(const Tile& rhs) const;
 
     friend std::ostream&
     operator<<(std::ostream& os, const Tile& t)

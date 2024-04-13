@@ -1,9 +1,10 @@
 #pragma once
 
+#include <initializer_list>
+#include <iterator>
 #include <limits>
 #include <optional>
 #include <queue>
-#include <initializer_list>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -27,8 +28,8 @@ public:
 
     using point_iterator = typename container_type::iterator;
 
-    quadtree_node(Tile tile, exterior_type exterior, std::size_t max_depth)
-    : m_tile(tile), m_exterior(exterior), m_max_depth(max_depth), m_points()
+    quadtree_node(Tile tile, exterior_type exterior)
+    : m_tile(tile), m_exterior(exterior), m_points()
     { }
 
     ~quadtree_node() = default;
@@ -44,14 +45,6 @@ public:
     exterior_type
     exterior() const
     { return m_exterior; }
-
-    std::size_t
-    x() const
-    { return cell_size() * m_tile.x(); }
-
-    std::size_t
-    y() const
-    { return cell_size() * m_tile.y(); }
 
     void
     insert(const key_type& key)
@@ -75,15 +68,15 @@ public:
 
 private:
     Tile m_tile;
-    std::size_t m_max_depth;
 
     exterior_type m_exterior;
     container_type m_points;
-
-    std::size_t
-    cell_size() const
-    { return (1 << (m_max_depth - m_tile.z())); }
 };
+
+
+template
+<typename Coordinate>
+class quadtree_set_iterator;
 
 
 template<typename Coordinate>
@@ -95,6 +88,10 @@ public:
 
     using exterior_type = quadrect<Coordinate>;
 
+    using container_type = std::unordered_map<Tile, node_type>;
+
+    using iterator = quadtree_set_iterator<Coordinate>;
+
     quadtree_set(
         const exterior_type& exterior,
         std::optional<quadtree_options> options = std::nullopt
@@ -105,7 +102,7 @@ public:
       m_num_terminal_nodes(0)
     {
         Tile tile = Tile::root;
-        node_type node(tile, exterior, m_options.max_depth());
+        node_type node(tile, exterior);
         m_nodes.insert(std::make_pair(tile, node));
     }
 
@@ -121,7 +118,7 @@ public:
         while (first != last) {
             Tile node_tile(*first);
             auto node_exterior = make_exterior(exterior, node_tile);
-            auto node = node_type(node_tile, node_exterior, m_options.max_depth());
+            auto node = node_type(node_tile, node_exterior);
 
             std::cout << "tile: " << node_tile << std::endl;
             m_nodes.insert(std::make_pair(node_tile, node));
@@ -156,6 +153,22 @@ public:
 
     ~quadtree_set() = default;
 
+    iterator
+    begin()
+    { return iterator(this); }
+
+    iterator
+    end()
+    { return iterator(); }
+
+    iterator
+    ibegin()
+    { return iterator(this, true); }
+
+    iterator
+    iend()
+    { return iterator(); }
+
     const exterior_type
     exterior() const
     {
@@ -167,6 +180,13 @@ public:
     contains(const key_type& point) const
     {
         return exterior().contains(point);
+    }
+
+    bool
+    contains(const Tile& tile) const
+    {
+        auto node = m_nodes.find(tile);
+        return node != m_nodes.end();
     }
 
     void
@@ -256,7 +276,9 @@ public:
     }
 
 private:
-    std::unordered_map<Tile, node_type> m_nodes;
+    friend class quadtree_set_iterator<Coordinate>;
+
+    container_type m_nodes;
     quadtree_options m_options;
 
     std::size_t m_total_depth;
@@ -298,9 +320,11 @@ private:
     void
     subdivide(node_type& node)
     {
+        // Subdivision increases the number of terminal nodes by 3, which might not be
+        // possible to do, since it will break the promised limit of terminal nodes.
         auto full = (
             m_options.hash_max_terminal_nodes() &&
-            m_options.max_terminal_nodes() >= m_num_terminal_nodes
+            m_options.max_terminal_nodes() > (m_num_terminal_nodes + 3)
         );
 
         if (
@@ -312,11 +336,11 @@ private:
             return;
         }
 
-        auto quadrects = node.exterior().symmetric_split();
+        auto exteriors = node.exterior().symmetric_split();
         for (std::size_t x : {0, 1}) {
             for (std::size_t y : {0, 1}) {
                 auto tile = node.tile().child(x, y);
-                auto n = node_type(tile, quadrects.at(x, y), m_options.max_depth());
+                auto n = node_type(tile, exteriors.at(x, y));
 
                 m_nodes.insert(std::make_pair(tile, n));
                 m_total_depth = std::max(tile.z(), m_total_depth);
@@ -333,6 +357,107 @@ private:
 
         node.clear();
     }
+};
+
+
+template<typename Coordinate>
+class quadtree_set_iterator
+{
+public:
+    using iterator_category = std::forward_iterator_tag;
+
+    using iterator = quadtree_set_iterator<Coordinate>;
+
+    using value_type = const quadtree_node<Coordinate>;
+
+    using reference = value_type&;
+
+    using pointer = value_type*;
+
+    explicit
+    quadtree_set_iterator(const quadtree_set<Coordinate>* set, bool include_internal = false)
+    : m_queue(),
+      m_set(set),
+      m_include_internal(include_internal)
+    {
+        m_queue.push(Tile::root);
+    }
+
+    quadtree_set_iterator()
+    : m_queue(),
+      m_set(nullptr),
+      m_include_internal(false)
+    { }
+
+    ~quadtree_set_iterator()
+    { }
+
+    iterator&
+    operator++()
+    { return next(); }
+
+    reference
+    operator*()
+    {
+        std::cout << "  operator* -> " << m_queue.front() << std::endl;
+        return m_set->m_nodes.at(m_queue.front());
+    }
+
+    bool
+    operator!=(const iterator& rhs)
+    {
+        std::cout << "  operator!= -> " << m_queue.size() << " " << rhs.m_queue.size() << std::endl;
+        return !(m_queue.size() == rhs.m_queue.size());
+    }
+
+private:
+    std::queue<Tile> m_queue;
+    const quadtree_set<Coordinate>* m_set;
+    bool m_include_internal;
+
+    using node_type = quadtree_node<Coordinate>;
+
+    bool
+    is_terminal(const Tile& tile)
+    {
+        return !m_set->contains(tile.child(0, 0));
+    }
+
+    iterator&
+    next_tile()
+    {
+        if (m_queue.empty()) {
+            return *this;
+        }
+
+        auto tile = m_queue.front();
+        m_queue.pop();
+
+        std::cout << " is terminal " << tile << " child " << tile.child(0, 0) << is_terminal(tile) << std::endl;
+
+        if (!is_terminal(tile)) {
+            for (std::size_t x : {0, 1}) {
+                for (std::size_t y : {0, 1}) {
+                    auto child_tile = tile.child(x, y);
+                    m_queue.push(tile.child(x, y));
+                }
+            }
+        }
+        return *this;
+    }
+
+    iterator&
+    next()
+    {
+        if (m_include_internal) {
+            return next_tile();
+        }
+        while (!m_queue.empty() && !is_terminal(m_queue.front())) {
+            next_tile();
+        }
+        return *this;
+    }
+
 };
 
 
