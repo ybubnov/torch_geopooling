@@ -5,21 +5,20 @@
 #include <c10/util/ArrayRef.h>
 #include <torch/torch.h>
 
-#include <torch_geopooling/quadtree_options.h>
-
 
 namespace torch_geopooling {
-
-
-using FloatArrayRef = c10::ArrayRef<double>;
 
 
 void
 quad_pool2d(
     const torch::Tensor& tiles,
-    const FloatArrayRef& exterior,
-    std::optional<quadtree_options> options = std::nullopt,
-    bool training = true
+    const torch::Tensor& input,
+    const torch::Tensor& weight,
+    const c10::ArrayRef<float>& exterior,
+    bool training = true,
+    std::optional<std::size_t> max_depth = std::nullopt,
+    std::optional<std::size_t> capacity = std::nullopt,
+    std::optional<std::size_t> precision = std::nullopt
 );
 
 

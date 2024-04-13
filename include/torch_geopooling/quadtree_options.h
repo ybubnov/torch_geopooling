@@ -25,34 +25,42 @@ struct quadtree_options {
     { return m_precision.has_value(); }
 
     quadtree_options
-    max_depth(std::size_t max_depth) const noexcept
+    max_depth(std::optional<std::size_t> max_depth) const noexcept
     {
         quadtree_options r = *this;
-        r.set_max_depth(max_depth);
+        if (max_depth.has_value()) {
+            r.set_max_depth(max_depth.value());
+        }
         return r;
     }
 
     quadtree_options
-    capacity(std::size_t capacity) const noexcept
+    capacity(std::optional<std::size_t> capacity) const noexcept
     {
         quadtree_options r = *this;
-        r.set_capacity(capacity);
+        if (capacity.has_value()) {
+            r.set_capacity(capacity.value());
+        }
         return r;
     }
 
     quadtree_options
-    max_terminal_nodes(std::size_t max_terminal_nodes) const noexcept
+    max_terminal_nodes(std::optional<std::size_t> max_terminal_nodes) const noexcept
     {
         quadtree_options r = *this;
-        r.set_max_terminal_nodes(max_terminal_nodes);
+        if (max_terminal_nodes.has_value()) {
+            r.set_max_terminal_nodes(max_terminal_nodes.value());
+        }
         return r;
     }
 
     quadtree_options
-    precision(std::size_t precision) const noexcept
+    precision(std::optional<std::size_t> precision) const noexcept
     {
         quadtree_options r = *this;
-        r.set_precision(precision);
+        if (precision.has_value()) {
+            r.set_precision(precision.value());
+        }
         return r;
     }
 

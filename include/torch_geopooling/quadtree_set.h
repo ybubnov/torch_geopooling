@@ -123,6 +123,7 @@ public:
             auto node_exterior = make_exterior(exterior, node_tile);
             auto node = node_type(node_tile, node_exterior, m_options.max_depth());
 
+            std::cout << "tile: " << node_tile << std::endl;
             m_nodes.insert(std::make_pair(node_tile, node));
 
             ++first;
@@ -155,11 +156,17 @@ public:
 
     ~quadtree_set() = default;
 
+    const exterior_type
+    exterior() const
+    {
+        const auto node = m_nodes.at(Tile::root);
+        return node.exterior();
+    }
+
     bool
     contains(const key_type& point) const
     {
-        const auto node = m_nodes.at(Tile::root);
-        return node.exterior().contains(point);
+        return exterior().contains(point);
     }
 
     void
@@ -175,6 +182,15 @@ public:
         auto& node = find(point);
         node.insert(point);
         subdivide(node);
+    }
+
+    template<typename InputIt>
+    void
+    insert(InputIt first, InputIt last) {
+        while (first != last) {
+            insert(*first);
+            ++first;
+        }
     }
 
     node_type&

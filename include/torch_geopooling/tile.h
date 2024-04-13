@@ -1,9 +1,11 @@
 #pragma once
 
+#include <cstdint>
 #include <iostream>
 
 #include <fmt/core.h>
 
+#include <torch_geopooling/exception.h>
 #include <torch_geopooling/functional.h>
 
 
@@ -16,7 +18,25 @@ public:
 
     Tile(std::size_t z, std::size_t x, std::size_t y);
 
-    Tile(const std::array<std::size_t, 3>& zxy);
+    template<typename T>
+    Tile(const std::array<T, 3>& zxy)
+    : Tile(
+        static_cast<std::size_t>(zxy[0]),
+        static_cast<std::size_t>(zxy[1]),
+        static_cast<std::size_t>(zxy[2])
+      )
+    {
+        auto [z, x, y] = zxy;
+        if (z < 0) {
+            throw value_error("Tile: z ({}) must be more than 0", z);
+        }
+        if (x < 0) {
+            throw value_error("Tile: x ({}) must be more than 0", x);
+        }
+        if (y < 0) {
+            throw value_error("Tile: y ({}) must be more than 0", y);
+        }
+    }
 
     std::size_t z() const;
 
