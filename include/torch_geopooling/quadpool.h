@@ -1,6 +1,7 @@
 #pragma once
 
 #include <optional>
+#include <tuple>
 
 #include <c10/util/ArrayRef.h>
 #include <torch/torch.h>
@@ -9,7 +10,7 @@
 namespace torch_geopooling {
 
 
-torch::Tensor
+std::tuple<torch::Tensor, torch::Tensor>
 quad_pool2d(
     const torch::Tensor& tiles,
     const torch::Tensor& input,

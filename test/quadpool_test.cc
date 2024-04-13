@@ -33,7 +33,12 @@ BOOST_AUTO_TEST_CASE(quad_pool2d_from_tiles)
     auto input = torch::tensor({{4.1, 4.5}}, tensor_options);
     auto weight = torch::randn({100}, tensor_options);
 
-    quad_pool2d(tiles, input, weight, {0.0, 0.0, 10.0, 10.0}, true);
+    auto [tiles_out, weight_out] = quad_pool2d(
+        tiles, input, weight, {0.0, 0.0, 10.0, 10.0}, true
+    );
+
+    BOOST_REQUIRE_EQUAL(tiles_out.dim(), 2);
+    BOOST_REQUIRE_EQUAL(weight_out.dim(), 1);
 }
 
 

@@ -399,14 +399,12 @@ public:
     reference
     operator*()
     {
-        std::cout << "  operator* -> " << m_queue.front() << std::endl;
         return m_set->m_nodes.at(m_queue.front());
     }
 
     bool
     operator!=(const iterator& rhs)
     {
-        std::cout << "  operator!= -> " << m_queue.size() << " " << rhs.m_queue.size() << std::endl;
         return !(m_queue.size() == rhs.m_queue.size());
     }
 
@@ -433,8 +431,6 @@ private:
         auto tile = m_queue.front();
         m_queue.pop();
 
-        std::cout << " is terminal " << tile << " child " << tile.child(0, 0) << is_terminal(tile) << std::endl;
-
         if (!is_terminal(tile)) {
             for (std::size_t x : {0, 1}) {
                 for (std::size_t y : {0, 1}) {
@@ -449,12 +445,14 @@ private:
     iterator&
     next()
     {
-        if (m_include_internal) {
-            return next_tile();
+        next_tile();
+
+        if (!m_include_internal) {
+            while (!m_queue.empty() && !is_terminal(m_queue.front())) {
+                next_tile();
+            }
         }
-        while (!m_queue.empty() && !is_terminal(m_queue.front())) {
-            next_tile();
-        }
+
         return *this;
     }
 
