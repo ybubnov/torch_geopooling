@@ -59,6 +59,7 @@ public:
     iterator&
     operator++()
     {
+        // TODO: ensure that iterator does not grow over the end.
         m_begin++;
         return *this;
     }
@@ -76,7 +77,7 @@ public:
     bool
     operator!=(const iterator& rhs)
     {
-        return !(m_accessor.data() == rhs.m_accessor.data() && m_begin == rhs.m_end);
+        return !(m_accessor.data() == rhs.m_accessor.data() && m_begin == rhs.m_begin);
     }
 
 private:
@@ -174,6 +175,7 @@ quad_pool2d(
         const auto& index = tile_index.at(node.tile());
         weight_indices.push_back(index);
     }
+    std::cout << "weight indices size=" << weight_indices.size() << std::endl;
 
     torch::Tensor weight_out = weight.index(
         at::indexing::TensorIndex(torch::tensor(weight_indices))

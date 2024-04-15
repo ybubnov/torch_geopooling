@@ -13,7 +13,7 @@ using namespace torch_geopooling;
 BOOST_AUTO_TEST_SUITE(TestQuadPool)
 
 
-BOOST_AUTO_TEST_CASE(quad_pool2d_from_tiles)
+BOOST_AUTO_TEST_CASE(quad_pool2d_training_unchanged)
 {
     auto tiles_options = torch::TensorOptions()
         .dtype(torch::kInt32)
@@ -39,6 +39,13 @@ BOOST_AUTO_TEST_CASE(quad_pool2d_from_tiles)
 
     BOOST_REQUIRE_EQUAL(tiles_out.dim(), 2);
     BOOST_REQUIRE_EQUAL(weight_out.dim(), 1);
+
+    BOOST_REQUIRE_EQUAL(tiles_out.sizes(), torch::IntArrayRef({5, 3}));
+    BOOST_REQUIRE_EQUAL(weight_out.sizes(), torch::IntArrayRef({1}));
+
+    auto weight_acc = weight.accessor<float, 1>();
+    auto weight_out_acc = weight_out.accessor<float, 1>();
+    BOOST_REQUIRE_EQUAL(weight_acc[1], weight_out_acc[0]);
 }
 
 
