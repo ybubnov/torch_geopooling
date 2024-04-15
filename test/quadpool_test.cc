@@ -49,4 +49,34 @@ BOOST_AUTO_TEST_CASE(quad_pool2d_training_unchanged)
 }
 
 
+BOOST_AUTO_TEST_CASE(quad_pool2d_training)
+{
+    auto tiles_options = torch::TensorOptions().dtype(torch::kInt32);
+    auto tiles = torch::empty({0, 3}, tiles_options);
+
+    auto tensor_options = torch::TensorOptions().dtype(torch::kFloat32);
+    auto weight = torch::randn({100}, tensor_options.requires_grad(true));
+    auto input = torch::tensor({
+        {1.0, 1.0},
+        {1.7, 1.7},
+        {1.0, 1.7},
+        {1.7, 1.0},
+        {9.9, 9.9},
+        {8.0, 8.0}
+    }, tensor_options);
+
+    auto [tiles_out, weight_out] = quad_pool2d(
+        tiles, input, weight, {0.0, 0.0, 10.0, 10.0}, true
+    );
+
+    BOOST_REQUIRE_EQUAL(tiles_out.dim(), 2);
+    BOOST_REQUIRE_EQUAL(weight_out.dim(), 1);
+
+    BOOST_REQUIRE_EQUAL(tiles_out.sizes(), torch::IntArrayRef({21, 3}));
+    BOOST_REQUIRE_EQUAL(weight_out.sizes(), torch::IntArrayRef({input.size(0)}));
+
+    BOOST_CHECK(weight_out.requires_grad());
+}
+
+
 BOOST_AUTO_TEST_SUITE_END()

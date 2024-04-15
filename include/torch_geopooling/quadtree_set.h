@@ -96,8 +96,8 @@ public:
         const exterior_type& exterior,
         std::optional<quadtree_options> options = std::nullopt
     )
-    : m_options(options.value_or(quadtree_options())),
-      m_nodes(),
+    : m_nodes(),
+      m_options(options.value_or(quadtree_options())),
       m_total_depth(0),
       m_num_terminal_nodes(0)
     {
@@ -120,7 +120,6 @@ public:
             auto node_exterior = make_exterior(exterior, node_tile);
             auto node = node_type(node_tile, node_exterior);
 
-            std::cout << "tile: " << node_tile << std::endl;
             m_nodes.insert(std::make_pair(node_tile, node));
 
             ++first;
@@ -324,7 +323,7 @@ private:
         // possible to do, since it will break the promised limit of terminal nodes.
         auto full = (
             m_options.hash_max_terminal_nodes() &&
-            m_options.max_terminal_nodes() > (m_num_terminal_nodes + 3)
+            m_options.max_terminal_nodes() < (m_num_terminal_nodes + 3)
         );
 
         if (
@@ -434,7 +433,6 @@ private:
         if (!is_terminal(tile)) {
             for (std::size_t x : {0, 1}) {
                 for (std::size_t y : {0, 1}) {
-                    auto child_tile = tile.child(x, y);
                     m_queue.push(tile.child(x, y));
                 }
             }

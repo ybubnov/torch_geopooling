@@ -3,8 +3,9 @@ cmake_minimum_required(VERSION 3.18 FATAL_ERROR)
 project(torch_geopooling, CXX)
 add_definitions(-std=c++17)
 
-find_package(fmt REQUIRED)
-find_package(Torch REQUIRED)
+
+find_package(fmt CONFIG REQUIRED)
+find_package(Torch CONFIG REQUIRED)
 
 enable_testing()
 

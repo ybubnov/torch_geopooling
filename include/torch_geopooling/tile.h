@@ -4,7 +4,7 @@
 #include <iostream>
 #include <vector>
 
-#include <fmt/core.h>
+#include <fmt/format.h>
 
 #include <torch_geopooling/exception.h>
 #include <torch_geopooling/functional.h>

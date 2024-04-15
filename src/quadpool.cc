@@ -150,8 +150,6 @@ quad_pool2d(
         tiles_out = tiles;
     }
 
-    std::cout << "iterate terminal nodes" << std::endl;
-
     // The tile index will change once the training iteration adjusts the quadtree set
     // structure. Since quads are embedded into a 1D tensor, there will be a drift of
     // weights. But with a large enough number of training iterations, these tiles map
@@ -161,7 +159,6 @@ quad_pool2d(
     std::unordered_map<Tile, int32_t> tile_index;
     for (auto node_it = set.begin(); node_it != set.end(); ++node_it) {
         auto tile = (*node_it).tile();
-        std::cout << "  -> tile " << tile << std::endl;
         tile_index.insert(std::make_pair(tile, tile_index.size()));
     }
 
@@ -175,7 +172,6 @@ quad_pool2d(
         const auto& index = tile_index.at(node.tile());
         weight_indices.push_back(index);
     }
-    std::cout << "weight indices size=" << weight_indices.size() << std::endl;
 
     torch::Tensor weight_out = weight.index(
         at::indexing::TensorIndex(torch::tensor(weight_indices))
