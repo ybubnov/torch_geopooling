@@ -92,7 +92,7 @@ quad_pool2d(
     const torch::Tensor& tiles,
     const torch::Tensor& input,
     const torch::Tensor& weight,
-    const c10::ArrayRef<float>& exterior,
+    const c10::ArrayRef<double>& exterior,
     bool training,
     std::optional<std::size_t> max_depth,
     std::optional<std::size_t> capacity,
@@ -109,12 +109,12 @@ quad_pool2d(
     TORCH_CHECK(input.dim() == 2, "quad_pool2d only supports 2D input, got ", input.dim(), "D");
     TORCH_CHECK(input.size(1) == 2, "quad_pool2d: input must be two-element tuples");
     TORCH_CHECK(
-        input.dtype() == torch::kFloat32,
-        "quad_pool2d only supports Float32 input, got: ", input.dtype()
+        input.dtype() == torch::kFloat64,
+        "quad_pool2d only supports Float64 input, got: ", input.dtype()
     );
 
     TORCH_CHECK(weight.dim() == 1, "quad_pool2d only supports 1D weight, got ", weight.dim(), "D");
-    TORCH_CHECK(exterior.size() == 4, "quad_pool2d: must be a tuple of four floats");
+    TORCH_CHECK(exterior.size() == 4, "quad_pool2d: must be a tuple of four doubles");
 
     auto options = quadtree_options()
         .max_terminal_nodes(weight.size(0))
@@ -123,7 +123,7 @@ quad_pool2d(
         .capacity(capacity);
 
     tensor_iterator2d<int32_t, 3> tiles_it(tiles);
-    quadtree_set<float> set(tiles_it.begin(), tiles_it.end(), exterior.vec(), options);
+    quadtree_set<double> set(tiles_it.begin(), tiles_it.end(), exterior.vec(), options);
 
     std::cout << "quad_pool2d size = " << set.size() << std::endl;
     std::cout << "quad_pool2d exterior = " << set.exterior() << std::endl;
@@ -132,7 +132,7 @@ quad_pool2d(
     torch::Tensor tiles_out;
 
     if (training) {
-        tensor_iterator2d<float, 2> input_it(input);
+        tensor_iterator2d<double, 2> input_it(input);
         set.insert(input_it.begin(), input_it.end());
 
         // Tiles are changing only in case of insert operation, therefore, extract tiles
@@ -162,7 +162,9 @@ quad_pool2d(
         tile_index.insert(std::make_pair(tile, tile_index.size()));
     }
 
-    tensor_iterator2d<float, 2> points_it(input);
+    std::cout << "quad_pool2d terminals = " << tile_index.size() << std::endl;
+    std::cout << "quad_pool2d max terminals = " << options.max_terminal_nodes() << std::endl;
+    tensor_iterator2d<double, 2> points_it(input);
     std::vector<int32_t> weight_indices;
 
     // This loop might raise an exception, when the tile returned by `set.find` operation

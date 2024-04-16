@@ -16,7 +16,7 @@ Tile::Tile()
 Tile::Tile(std::size_t z, std::size_t x, std::size_t y)
 : m_z(z), m_x(x), m_y(y)
 {
-    auto max_size = 1 << m_z;
+    std::size_t max_size = 1 << m_z;
     if (x >= max_size) {
         throw value_error(
             "Tile: x ({}) exceeds max size ({}) for z-scale ({})", m_x, max_size, m_z

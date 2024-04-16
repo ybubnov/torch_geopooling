@@ -3,6 +3,8 @@
 #include <pybind11/pybind11.h>
 #include <torch/extension.h>
 
+#include "python_tuples.h"
+
 
 namespace torch_geopooling {
 

@@ -99,7 +99,7 @@ public:
     : m_nodes(),
       m_options(options.value_or(quadtree_options())),
       m_total_depth(0),
-      m_num_terminal_nodes(0)
+      m_num_terminal_nodes(1)
     {
         Tile tile = Tile::root;
         node_type node(tile, exterior);
@@ -323,7 +323,7 @@ private:
         // possible to do, since it will break the promised limit of terminal nodes.
         auto full = (
             m_options.hash_max_terminal_nodes() &&
-            m_options.max_terminal_nodes() < (m_num_terminal_nodes + 3)
+            (m_num_terminal_nodes + 3) >= m_options.max_terminal_nodes()
         );
 
         if (
