@@ -11,13 +11,14 @@ def quad_pool2d(
     tiles: Tensor,
     input: Tensor,
     weight: Tensor,
+    bias: Tensor,
     exterior: tuple[float, ...],
     training: bool,
     max_depth: int | None = None,
     capacity: int | None = None,
     precision: int | None = None,
 ) -> tuple[Tensor, Tensor]:
-    tiles, weight = _C.quad_pool2d(
-        tiles, input, weight, exterior, training, max_depth, capacity, precision
+    tiles, weight, bias = _C.quad_pool2d(
+        tiles, input, weight, bias, exterior, training, max_depth, capacity, precision
     )
-    return return_types.quad_pool2d(tiles, weight)
+    return return_types.quad_pool2d(tiles, weight, bias)

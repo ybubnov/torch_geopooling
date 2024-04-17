@@ -87,11 +87,12 @@ private:
 };
 
 
-std::tuple<torch::Tensor, torch::Tensor>
+std::tuple<torch::Tensor, torch::Tensor, torch::Tensor>
 quad_pool2d(
     const torch::Tensor& tiles,
     const torch::Tensor& input,
     const torch::Tensor& weight,
+    const torch::Tensor& bias,
     const c10::ArrayRef<double>& exterior,
     bool training,
     std::optional<std::size_t> max_depth,
@@ -114,6 +115,12 @@ quad_pool2d(
     );
 
     TORCH_CHECK(weight.dim() == 1, "quad_pool2d only supports 1D weight, got ", weight.dim(), "D");
+    TORCH_CHECK(bias.dim() == 1, "quad_pool2d only supports 1D bias, got ", bias.dim(), "D");
+    TORCH_CHECK(
+        weight.sizes() == bias.sizes(),
+        "quad_pool2d: weight (", weight.sizes(), ") and bias (",
+        bias.sizes(), ") are differ in size"
+    );
     TORCH_CHECK(exterior.size() == 4, "quad_pool2d: must be a tuple of four doubles");
 
     auto options = quadtree_options()
@@ -175,10 +182,11 @@ quad_pool2d(
         weight_indices.push_back(index);
     }
 
-    torch::Tensor weight_out = weight.index(
-        at::indexing::TensorIndex(torch::tensor(weight_indices))
-    );
-    return std::make_tuple(tiles_out, weight_out);
+    auto index = at::indexing::TensorIndex(torch::tensor(weight_indices));
+    torch::Tensor weight_out = weight.index(index);
+    torch::Tensor bias_out = bias.index(index);
+
+    return std::make_tuple(tiles_out, weight_out, bias_out);
 }
 
 

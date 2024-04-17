@@ -6,3 +6,4 @@ from torch import Tensor
 class quad_pool2d(NamedTuple):
     tiles: Tensor
     weight: Tensor
+    bias: Tensor
