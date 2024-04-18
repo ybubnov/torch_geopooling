@@ -19,7 +19,7 @@ jobs:
       run: |
         apt-get update
         apt-get install -y libunwind-dev --no-install-recommends
-        apt-get install -y libboost-test-dev libfmt-dev --no-install-recommends
+        apt-get install -y cmake build-essential libboost-test-dev libfmt-dev --no-install-recommends
 
     - name: Configure CMake
       run: cmake -B ${{github.workspace}}/build
