@@ -3,7 +3,6 @@ cmake_minimum_required(VERSION 3.18 FATAL_ERROR)
 project(torch_geopooling, CXX)
 add_definitions(-std=c++17)
 
-
 find_package(fmt CONFIG REQUIRED)
 find_package(Torch CONFIG REQUIRED)
 
@@ -27,7 +26,7 @@ add_library(torch_geopooling SHARED ${torch_geopooling_SOURCES})
 set_target_properties(torch_geopooling PROPERTIES CXX_STANDARD 17)
 set_target_properties(torch_geopooling PROPERTIES VERSION ${torch_geopooling_LIBRARY_VERSION})
 set_target_properties(torch_geopooling PROPERTIES SOVERSION ${torch_geopooling_LIBRARY_SOVERSION})
-target_link_libraries(torch_geopooling fmt::fmt)
+target_link_libraries(torch_geopooling fmt::fmt-header-only)
 target_link_libraries(torch_geopooling "${TORCH_LIBRARIES}")
 
 
