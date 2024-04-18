@@ -17,7 +17,7 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y libunwind-dev --no-install-recommends
-        sudo apt-get install -y libboost-test-dev libtorch-dev --no-install-recommends
+        sudo apt-get install -y libboost-test-dev libfmt-dev libtorch-dev --no-install-recommends
 
     - name: Configure CMake
       run: cmake -B ${{github.workspace}}/build
