@@ -9,6 +9,8 @@ on:
 jobs:
   unit-tests:
     runs-on: ubuntu-latest
+    container:
+      image: ubuntu:latest
 
     steps:
     - id: checkout
