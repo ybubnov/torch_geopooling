@@ -28,9 +28,10 @@ jobs:
       run: |
         apt-get update
         apt-get install -y libunwind-dev
-        apt-get install -y cmake build-essential libboost-test-dev libfmt-dev python3-torch
+        apt-get install -y cmake build-essential libboost-test-dev libfmt-dev
+        pip3 install torch
 
-    - name: Find PyTorch installation path
+    - name: Find PyTorch CMake path
       id: find_libtorch
       run: >
         echo "cmake_prefix_path=$(python3 -c 'import torch; print(torch.utils.cmake_prefix_path)')"
