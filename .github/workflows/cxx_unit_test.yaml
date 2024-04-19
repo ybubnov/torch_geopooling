@@ -50,5 +50,4 @@ jobs:
       run: cmake --build ${{github.workspace}}/build
 
     - name: Run unit-tests
-      working-directory: ${{github.workspace}}/build
-      run: make test ARGS=--verbose"
+      run: make -C build test ARGS=--verbose"
