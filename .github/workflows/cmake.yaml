@@ -28,7 +28,7 @@ jobs:
       run: |
         apt-get update
         apt-get install -y libunwind-dev
-        apt-get install -y cmake build-essential libboost-test-dev libfmt-dev
+        apt-get install -y cmake build-essential libboost-test-dev libfmt-dev python3-pip
         pip3 install torch
 
     - name: Find PyTorch CMake path
