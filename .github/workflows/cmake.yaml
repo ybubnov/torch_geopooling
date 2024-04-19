@@ -36,6 +36,9 @@ jobs:
         echo "cmake_prefix_path=$(python3 -c 'import torch; print(torch.utils.cmake_prefix_path)')"
         >> $GITHUB_OUTPUT
 
+    - name: List content
+      run: ls -l ${{steps.find_libtorch.outputs.cmake_prefix_path}}
+
     - name: Configure CMake
       run: >
         cmake
