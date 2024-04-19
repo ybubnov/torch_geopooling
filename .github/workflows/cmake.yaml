@@ -13,23 +13,27 @@ jobs:
       image: ubuntu:latest
 
     steps:
-    - id: checkout
-      name: Checkout source code
+    - name: Checkout source code
+      id: checkout
       uses: actions/checkout@v4
 
-    - id: configure_apt
-      name: Configure apt recommendations
+    - name: Configure apt recommendations
+      id: configure_apt
       run: |
         echo 'APT::Install-Recommends "false";' >> /etc/apt/apt.conf
         echo 'APT::Install-Suggests "false";' >> /etc/apt/apt.conf
 
-    - id: install_packages
-      name: Install third-party libraries
+    - name: Install third-party libraries
+      id: install_packages
       run: |
         apt-get update
         apt-get install -y libunwind-dev
         apt-get install -y cmake build-essential libboost-test-dev libfmt-dev python3-pip
-        pip3 install torch
+
+    - name: Install PyTorch (CPU)
+      id: install_torch_cpu
+      run: |
+        pip3 install torch+cpu --index-url --index-url https://download.pytorch.org/whl/cpu
 
     - name: Find PyTorch CMake path
       id: find_libtorch
