@@ -9,31 +9,42 @@ on:
 jobs:
   unit-tests:
     runs-on: ubuntu-latest
-    container:
-      image: pytorch/pytorch:latest
 
     steps:
     - id: checkout
       name: Checkout source code
       uses: actions/checkout@v4
 
+    - id: configure_apt
+      name: Configure apt recommendations
+      run: |
+        echo 'APT::Install-Recommends "false";' >> /etc/apt/apt.conf
+        echo 'APT::Install-Suggests "false";' >> /etc/apt/apt.conf
+
     - id: install_packages
       name: Install third-party libraries
       run: |
         apt-get update
-        apt-get install -y libunwind-dev --no-install-recommends
-        apt-get install -y cmake build-essential libboost-test-dev libfmt-dev --no-install-recommends
+        apt-get install -y libunwind-dev
+        apt-get install -y cmake build-essential libboost-test-dev libfmt-dev python3-torch
 
     - name: Find PyTorch installation path
       id: find_libtorch
-      run: |
-        echo "cmake_prefix_path=$(python -c 'import torch; print(torch.utils.cmake_prefix_path)')" >> $GITHUB_OUTPUT
+      run: >
+        echo "cmake_prefix_path=$(python3 -c 'import torch; print(torch.utils.cmake_prefix_path)')"
+        >> $GITHUB_OUTPUT
 
     - name: Configure CMake
-      run: cmake -DCMAKE_PREFIX_PATH=${{steps.find_libtorch.outputs.cmake_prefix_path}} -B ${{github.workspace}}/build
+      run: >
+        cmake
+        -DCMAKE_PREFIX_PATH=${{steps.find_libtorch.outputs.cmake_prefix_path}}
+        -B ${{github.workspace}}/build
 
     - name: Build
-      run: cmake -DCMAKE_PREFIX_PATH=${{steps.find_libtorch.outputs.cmake_prefix_path}} --build ${{github.workspace}}/build
+      run: >
+        cmake
+        -DCMAKE_PREFIX_PATH=${{steps.find_libtorch.outputs.cmake_prefix_path}}
+        --build ${{github.workspace}}/build
 
     - name: Test
       working-directory: ${{github.workspace}}/build
