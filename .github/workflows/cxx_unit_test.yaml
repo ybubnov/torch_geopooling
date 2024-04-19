@@ -37,7 +37,7 @@ jobs:
     - name: Find PyTorch cmake prefix path
       id: find_torch
       run: |
-        echo "cmake_prefix_path=$(python -c 'import torch; print(torch.utils.cmake_prefix_path)')"
+        echo "cmake_prefix_path=$(python3 -c 'import torch; print(torch.utils.cmake_prefix_path)')"
         >> $GITHUB_OUTPUT
 
     - name: Configure CMake
