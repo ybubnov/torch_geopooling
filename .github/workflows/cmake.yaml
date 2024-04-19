@@ -32,8 +32,9 @@ jobs:
 
     - name: Install PyTorch (CPU)
       id: install_torch_cpu
-      run: |
-        pip3 install torch+cpu --index-url --index-url https://download.pytorch.org/whl/cpu
+      run: >
+        pip3 install 'torch>=2.0.0+cpu'
+        --index-url --index-url https://download.pytorch.org/whl/cpu
 
     - name: Find PyTorch CMake path
       id: find_libtorch
