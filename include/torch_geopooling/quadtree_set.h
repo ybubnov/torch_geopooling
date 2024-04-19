@@ -83,6 +83,7 @@ template<typename Coordinate>
 class quadtree_set {
 public:
     using key_type = std::pair<Coordinate, Coordinate>;
+    using key_array_type = std::array<Coordinate, 2>;
 
     using node_type = quadtree_node<Coordinate>;
 
@@ -203,6 +204,12 @@ public:
         subdivide(node);
     }
 
+    void
+    insert(const key_array_type& key)
+    {
+        insert(key_type(key[0], key[1]));
+    }
+
     template<typename InputIt>
     void
     insert(InputIt first, InputIt last) {
@@ -244,6 +251,12 @@ public:
         }
 
         return *node;
+    }
+
+    node_type&
+    find(const key_array_type& point, std::optional<std::size_t> max_depth = std::nullopt)
+    {
+        return find(key_type(point[0], point[1]), max_depth);
     }
 
     node_type&

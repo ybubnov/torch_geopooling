@@ -1,6 +1,4 @@
 find_package(Boost COMPONENTS unit_test_framework REQUIRED)
-find_package(fmt REQUIRED)
-find_package(Torch REQUIRED)
 
 # Define the c++ standard.
 add_definitions(-std=c++17)
