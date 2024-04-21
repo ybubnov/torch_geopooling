@@ -1,3 +1,4 @@
+from typing import Optional
 from typing import Tuple
 
 from torch import Tensor
@@ -16,9 +17,9 @@ def quad_pool2d(
     bias: Tensor,
     exterior: Tuple[float, ...],
     training: bool,
-    max_depth: int | None = None,
-    capacity: int | None = None,
-    precision: int | None = None,
+    max_depth: Optional[int] = None,
+    capacity: Optional[int] = None,
+    precision: Optional[int] = None,
 ) -> Tuple[Tensor, Tensor]:
     tiles, weight, bias = _C.quad_pool2d(
         tiles, input, weight, bias, exterior, training, max_depth, capacity, precision
