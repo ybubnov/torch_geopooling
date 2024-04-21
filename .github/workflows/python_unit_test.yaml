@@ -13,7 +13,7 @@ jobs:
         python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
     runs-on: ubuntu-latest
     container:
-      image: ubuntu:latest
+      image: python:${{matrix.python-version}}
 
     steps:
     - name: Checkout source code
@@ -29,11 +29,6 @@ jobs:
         apt-get update
         apt-get install -y cmake build-essential libboost-test-dev libfmt-dev wget unzip
         apt-get install -y python3-dev
-
-    - name: Setup Python ${{matrix.python-version}}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{matrix.python-version}}
 
     - name: Install Python dependencies
       run: |
