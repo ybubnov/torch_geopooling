@@ -40,7 +40,7 @@ jobs:
     - name: Build and install
       run: |
         python setup.py build
-        find "${{github.workspace}}" -name '_C.*.so' "${{github.workspace}}/torch_geopooling/" \;
+        find build -name '_C.*.so' -exec cp '{}' torch_geopooling/ \;
 
     - name: Run unit-tests
       run: pytest -vv
