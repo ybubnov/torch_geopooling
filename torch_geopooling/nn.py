@@ -1,3 +1,5 @@
+from typing import Tuple
+
 import torch
 from torch import nn
 from torch import Tensor
@@ -9,14 +11,14 @@ class QuadPool2d(nn.Module):
     def __init__(
         self,
         kernel_size: int,
-        exterior: tuple[float, float, float, float],
+        exterior: Tuple[float, float, float, float],
         max_depth: int = 17,
         capacity: int = 1,
         precision: int = 7,
     ) -> None:
         super().__init__()
         self.kernel_size = kernel_size
-        self.exterior = tuple(map(float, exterior))
+        self.exterior = Tuple(map(float, exterior))
         self.max_depth = max_depth
         self.capacity = capacity
         self.precision = precision
