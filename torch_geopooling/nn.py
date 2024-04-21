@@ -18,7 +18,7 @@ class QuadPool2d(nn.Module):
     ) -> None:
         super().__init__()
         self.kernel_size = kernel_size
-        self.exterior = Tuple(map(float, exterior))
+        self.exterior = tuple(map(float, exterior))
         self.max_depth = max_depth
         self.capacity = capacity
         self.precision = precision
