@@ -30,6 +30,9 @@ jobs:
         apt-get install -y cmake build-essential libboost-test-dev libfmt-dev wget unzip
         apt-get install -y python3-dev
 
+    - name: Check Python version
+      run: python --version
+
     - name: Install Python dependencies
       run: |
         pip install 'torch>=2.2.0+cpu' --index-url https://download.pytorch.org/whl/cpu
