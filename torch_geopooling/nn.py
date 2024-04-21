@@ -6,18 +6,17 @@ from torch_geopooling import functional as F
 
 
 class QuadPool2d(nn.Module):
-
     def __init__(
         self,
         kernel_size: int,
         exterior: tuple[float, float, float, float],
-        max_depth: int = 1,
+        max_depth: int = 17,
         capacity: int = 1,
         precision: int = 7,
     ) -> None:
         super().__init__()
         self.kernel_size = kernel_size
-        self.exterior = exterior
+        self.exterior = tuple(map(float, exterior))
         self.max_depth = max_depth
         self.capacity = capacity
         self.precision = precision
@@ -41,7 +40,7 @@ class QuadPool2d(nn.Module):
             "precision={precision}".format(**self.__dict__)
         )
 
-    def forward(self, input: Tensor) -> Tensor:
+    def forward(self, input: Tensor, x: Tensor) -> Tensor:
         result = F.quad_pool2d(
             self.tiles,
             input,
@@ -55,4 +54,4 @@ class QuadPool2d(nn.Module):
         )
         if self.training:
             self.tiles = result.tiles
-        return result.weight + result.bias
+        return result.weight * x + result.bias

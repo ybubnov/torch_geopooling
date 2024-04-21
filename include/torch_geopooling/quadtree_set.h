@@ -130,16 +130,21 @@ public:
         // Verify integrity of the resulting quadtree set by assuring that every children
         // has a parent up until the root tile (0, 0, 0).
         for (auto node : m_nodes) {
-            auto parent_tile = node.first.parent();
+            auto node_tile = node.first;
+            auto parent_tile = node_tile.parent();
 
             while (parent_tile != Tile::root) {
                 if (auto n = m_nodes.find(parent_tile); n == m_nodes.end()) {
                     throw value_error(
                         "quadtree_set: tile {} does not have a parent {}",
-                        node.first, parent_tile
+                        node_tile, parent_tile
                     );
                 }
                 parent_tile = parent_tile.parent();
+            }
+
+            if (!is_terminal(node_tile)) {
+                m_num_terminal_nodes += 1;
             }
         }
     }
@@ -310,6 +315,17 @@ private:
         }
     }
 
+    bool
+    is_terminal(const Tile& tile) const
+    {
+        return (
+            !contains(tile.child(0, 0)) &&
+            !contains(tile.child(0, 1)) &&
+            !contains(tile.child(1, 0)) &&
+            !contains(tile.child(1, 1))
+        );
+    }
+
     exterior_type
     make_exterior(const exterior_type exterior, const Tile& tile) const
     {
@@ -427,12 +443,6 @@ private:
 
     using node_type = quadtree_node<Coordinate>;
 
-    bool
-    is_terminal(const Tile& tile)
-    {
-        return !m_set->contains(tile.child(0, 0));
-    }
-
     iterator&
     next_tile()
     {
@@ -443,7 +453,7 @@ private:
         auto tile = m_queue.front();
         m_queue.pop();
 
-        if (!is_terminal(tile)) {
+        if (!m_set->is_terminal(tile)) {
             for (std::size_t x : {0, 1}) {
                 for (std::size_t y : {0, 1}) {
                     m_queue.push(tile.child(x, y));
@@ -459,7 +469,7 @@ private:
         next_tile();
 
         if (!m_include_internal) {
-            while (!m_queue.empty() && !is_terminal(m_queue.front())) {
+            while (!m_queue.empty() && !m_set->is_terminal(m_queue.front())) {
                 next_tile();
             }
         }
