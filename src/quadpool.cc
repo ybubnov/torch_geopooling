@@ -132,10 +132,6 @@ quad_pool2d(
     tensor_iterator2d<int32_t, 3> tiles_it(tiles);
     quadtree_set<double> set(tiles_it.begin(), tiles_it.end(), exterior.vec(), options);
 
-    std::cout << "quad_pool2d size = " << set.size() << std::endl;
-    std::cout << "quad_pool2d exterior = " << set.exterior() << std::endl;
-    std::cout << "quad_pool2d depth = " << set.total_depth() << std::endl;
-
     torch::Tensor tiles_out;
 
     if (training) {
@@ -169,8 +165,6 @@ quad_pool2d(
         tile_index.insert(std::make_pair(tile, tile_index.size()));
     }
 
-    std::cout << "quad_pool2d terminals = " << tile_index.size() << std::endl;
-    std::cout << "quad_pool2d max terminals = " << options.max_terminal_nodes() << std::endl;
     tensor_iterator2d<double, 2> points_it(input);
     std::vector<int32_t> weight_indices;
 
