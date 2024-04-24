@@ -160,7 +160,7 @@ public:
 
     iterator
     begin()
-    { return iterator(this); }
+    { return iterator(this, Tile::root); }
 
     iterator
     end()
@@ -168,7 +168,7 @@ public:
 
     iterator
     ibegin()
-    { return iterator(this, true); }
+    { return iterator(this, Tile::root, true); }
 
     iterator
     iend()
@@ -222,6 +222,33 @@ public:
             insert(*first);
             ++first;
         }
+    }
+
+    /// @brief Find terminal group of nodes sharing the same parent.
+    ///
+    /// This method finds a terminal node containing the specified point, gets it's parent
+    /// and iterates over all terminal nodes of the parent. When node does not belong to a
+    /// terminal node, method returns `end()`, or empty iterator.
+    ///
+    /// @param point a 2-dimensional point.
+    /// @param max_depth a maximum depth of the look operation. When specified, the point lookup
+    ///     process is limited by the specified depth.
+    ///
+    /// @returns The iterator over a group of terminal nodes.
+    iterator
+    find_terminal_group(
+        const key_type& point,
+        std::optional<std::size_t> max_depth = std::nullopt
+    )
+    {
+        assert_contains(point);
+
+        const auto& node = find(point, max_depth);
+        if (!is_terminal(node)) {
+            return end();
+        }
+
+        return quadtree_set_iterator(this, node.tile().parent());
     }
 
     node_type&
@@ -403,12 +430,16 @@ public:
     using pointer = value_type*;
 
     explicit
-    quadtree_set_iterator(const quadtree_set<Coordinate>* set, bool include_internal = false)
+    quadtree_set_iterator(
+        const quadtree_set<Coordinate>* set,
+        const Tile tile = Tile::root,
+        bool include_internal = false
+    )
     : m_queue(),
       m_set(set),
       m_include_internal(include_internal)
     {
-        m_queue.push(Tile::root);
+        m_queue.push(tile);
     }
 
     quadtree_set_iterator()
@@ -420,6 +451,8 @@ public:
     ~quadtree_set_iterator()
     { }
 
+    // TODO: remember the size of a quadtree and throw exception, if size of the underlying
+    // set was changed by insert operation.
     iterator&
     operator++()
     { return next(); }
