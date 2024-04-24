@@ -6,7 +6,6 @@ from typing import Tuple
 from typing import List
 from typing import Iterator
 from typing import Set
-from typing import TypeAlias
 from typing import NamedTuple
 
 from torch import Tensor
