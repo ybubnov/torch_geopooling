@@ -144,7 +144,7 @@ quad_pool2d(
         std::vector<torch::Tensor> tiles_out_rows;
 
         for (auto node_it = set.ibegin(); node_it != set.iend(); ++node_it) {
-            auto tile = (*node_it).tile();
+            auto tile = node_it->tile();
             tiles_out_rows.push_back(torch::tensor(tile.vec<int32_t>(), tiles.options()));
         }
 
