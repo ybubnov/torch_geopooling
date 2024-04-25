@@ -1,6 +1,9 @@
 #define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MODULE quadtree_set
 
+#include <unordered_set>
+
+#include <fmt/format.h>
 #include <boost/test/included/unit_test.hpp>
 
 #include <torch_geopooling.h>
@@ -137,6 +140,58 @@ BOOST_AUTO_TEST_CASE(quadtree_set_find_by_tile)
 
     auto node5 = set.find(Tile(3, 4, 4));
     BOOST_CHECK_EQUAL(node5.tile(), Tile(2, 2, 2));
+}
+
+
+BOOST_AUTO_TEST_CASE(quadtree_set_find_terminal_group)
+{
+    BOOST_TEST_MESSAGE("--- Find terminal group in non-empty quadtree set");
+
+    quadtree_set set({0.0, 0.0, 10.0, 10.0});
+
+    set.insert(std::make_pair(1.0, 1.0)); // depth = 0
+    set.insert(std::make_pair(1.7, 1.7)); // depth = 1
+    set.insert(std::make_pair(1.0, 1.7)); // depth = 2
+    set.insert(std::make_pair(1.7, 1.0)); // depth = 3
+
+    // Query a node from the bottom of the quadtree, which has exactly 4 neighbours.
+    std::unordered_set<Tile> nodes1;
+    auto point1 = std::make_pair(1.8, 1.8);
+
+    for (auto it = set.find_terminal_group(point1); it != set.end(); ++it) {
+        Tile tile = it->tile();
+        bool is_terminal = !(
+            set.contains(tile.child(0, 0)) ||
+            set.contains(tile.child(0, 1)) ||
+            set.contains(tile.child(1, 0)) ||
+            set.contains(tile.child(1, 1))
+        );
+
+        BOOST_REQUIRE_MESSAGE(is_terminal, fmt::format("tile {} is not terminal", tile));
+        nodes1.insert(tile);
+    }
+
+    BOOST_CHECK_EQUAL(nodes1.size(), 4);
+
+    // Repeat the same, but now take node from the lower-depth node. In this case, the
+    // terminal group will be larger as we query high-partitioned neighbour quads.
+    std::unordered_set<Tile> nodes2;
+    auto point2 = std::make_pair(9.9, 9.9);
+
+    for (auto it = set.find_terminal_group(point2); it != set.end(); ++it) {
+        Tile tile = it->tile();
+        bool is_terminal = !(
+            set.contains(tile.child(0, 0)) ||
+            set.contains(tile.child(0, 1)) ||
+            set.contains(tile.child(1, 0)) ||
+            set.contains(tile.child(1, 1))
+        );
+
+        BOOST_REQUIRE_MESSAGE(is_terminal, fmt::format("tile {} is not terminal", tile));
+        nodes2.insert(tile);
+    }
+
+    BOOST_CHECK_EQUAL(nodes2.size(), 10);
 }
 
 

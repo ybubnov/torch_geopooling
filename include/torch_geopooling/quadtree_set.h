@@ -8,6 +8,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
+#include <torch_geopooling/exception.h>
 #include <torch_geopooling/functional.h>
 #include <torch_geopooling/tile.h>
 #include <torch_geopooling/quadrect.h>
@@ -143,7 +144,7 @@ public:
                 parent_tile = parent_tile.parent();
             }
 
-            if (!is_terminal(node_tile)) {
+            if (!has_children(node_tile)) {
                 m_num_terminal_nodes += 1;
             }
         }
@@ -244,7 +245,7 @@ public:
         assert_contains(point);
 
         const auto& node = find(point, max_depth);
-        if (!is_terminal(node)) {
+        if (has_children(node.tile())) {
             return end();
         }
 
@@ -342,17 +343,6 @@ private:
         }
     }
 
-    bool
-    is_terminal(const Tile& tile) const
-    {
-        return (
-            !contains(tile.child(0, 0)) &&
-            !contains(tile.child(0, 1)) &&
-            !contains(tile.child(1, 0)) &&
-            !contains(tile.child(1, 1))
-        );
-    }
-
     exterior_type
     make_exterior(const exterior_type exterior, const Tile& tile) const
     {
@@ -362,13 +352,13 @@ private:
     }
 
     bool
-    has_children(const node_type& node) const
+    has_children(const Tile& tile) const
     {
         return (
-            (m_nodes.find(node.tile().child(0, 0)) != m_nodes.end()) &&
-            (m_nodes.find(node.tile().child(0, 1)) != m_nodes.end()) &&
-            (m_nodes.find(node.tile().child(1, 0)) != m_nodes.end()) &&
-            (m_nodes.find(node.tile().child(1, 1)) != m_nodes.end())
+            contains(tile.child(0, 0)) ||
+            contains(tile.child(0, 1)) ||
+            contains(tile.child(1, 0)) ||
+            contains(tile.child(1, 1))
         );
     }
 
@@ -386,7 +376,7 @@ private:
             full ||
             node.size() <= m_options.capacity() ||
             node.tile().z() >= m_options.max_depth() ||
-            has_children(node)
+            has_children(node.tile())
         ) {
             return;
         }
@@ -415,6 +405,12 @@ private:
 };
 
 
+/// Forward iterator of quadtree set.
+///
+/// Class provides iterator traits and can be used in for-loops to iterate both internal and
+/// terminal nodes of a quadtree.
+///
+/// Effectively iterator utilizes breadth-first graph traversal algorithm.
 template<typename Coordinate>
 class quadtree_set_iterator
 {
@@ -440,6 +436,7 @@ public:
       m_include_internal(include_internal)
     {
         m_queue.push(tile);
+        forward();
     }
 
     quadtree_set_iterator()
@@ -459,9 +456,11 @@ public:
 
     reference
     operator*()
-    {
-        return m_set->m_nodes.at(m_queue.front());
-    }
+    { return get(); }
+
+    pointer
+    operator->()
+    { return &get(); }
 
     bool
     operator!=(const iterator& rhs)
@@ -476,6 +475,31 @@ private:
 
     using node_type = quadtree_node<Coordinate>;
 
+    reference
+    get()
+    {
+        if (m_queue.empty()) {
+            throw out_of_range("quadtree_set_iterator: access to empty iterator");
+        }
+        return m_set->m_nodes.at(m_queue.front());
+    }
+
+    /// Rewind the state of the iterator to the expected state.
+    ///
+    /// If the iterator should not return internal nodes, method rewinds tiles until the
+    /// queue contains in front a terminal node. The rewinding forward might reach the end
+    /// of the iterator.
+    void
+    forward()
+    {
+        if (!m_include_internal) {
+            while (!m_queue.empty() && m_set->has_children(m_queue.front())) {
+                next_tile();
+            }
+        }
+    }
+
+    /// Iterate nodes of the quadtree. For each internal node, queue growth by it's children.
     iterator&
     next_tile()
     {
@@ -486,7 +510,7 @@ private:
         auto tile = m_queue.front();
         m_queue.pop();
 
-        if (!m_set->is_terminal(tile)) {
+        if (m_set->has_children(tile)) {
             for (std::size_t x : {0, 1}) {
                 for (std::size_t y : {0, 1}) {
                     m_queue.push(tile.child(x, y));
@@ -496,20 +520,17 @@ private:
         return *this;
     }
 
+    /// Next moves the iterator one step forward.
+    ///
+    /// When the front of the queue contains internal node, but iterator is configured
+    /// only for terminal nodes, then method rewinds nodes until the first terminal node.
     iterator&
     next()
     {
         next_tile();
-
-        if (!m_include_internal) {
-            while (!m_queue.empty() && !m_set->is_terminal(m_queue.front())) {
-                next_tile();
-            }
-        }
-
+        forward();
         return *this;
     }
-
 };
 
 

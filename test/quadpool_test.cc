@@ -30,7 +30,7 @@ BOOST_AUTO_TEST_CASE(quad_pool2d_training_unchanged)
         .dtype(torch::kFloat64)
         .device(torch::kCPU);
 
-    auto input = torch::tensor({{4.1, 4.5}}, tensor_options);
+    auto input = torch::tensor({{9.1, 9.5}}, tensor_options);
     auto weight = torch::rand({100}, tensor_options);
     auto bias = torch::rand({100}, tensor_options);
 
@@ -48,11 +48,11 @@ BOOST_AUTO_TEST_CASE(quad_pool2d_training_unchanged)
 
     auto weight_acc = weight.accessor<double, 1>();
     auto weight_out_acc = weight_out.accessor<double, 1>();
-    BOOST_REQUIRE_EQUAL(weight_acc[1], weight_out_acc[0]);
+    BOOST_REQUIRE_EQUAL(weight_acc[3], weight_out_acc[0]);
 
     auto bias_acc = bias.accessor<double, 1>();
     auto bias_out_acc = bias_out.accessor<double, 1>();
-    BOOST_REQUIRE_EQUAL(bias_acc[1], bias_out_acc[0]);
+    BOOST_REQUIRE_EQUAL(bias_acc[3], bias_out_acc[0]);
 }
 
 
