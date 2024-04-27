@@ -69,7 +69,7 @@ public:
     {
         auto vec_size = vec.size();
         if (vec_size != 4) {
-            throw value_error("quadrect: size of initializer list ({}) should be {}", vec_size);
+            throw value_error("quadrect: size of input ({}) should be {}", vec_size);
         }
 
         std::array<value_type, 4> xywh;

@@ -168,11 +168,11 @@ public:
     { return iterator(); }
 
     iterator
-    ibegin()
+    ibegin() const
     { return iterator(this, Tile::root, true); }
 
     iterator
-    iend()
+    iend() const
     { return iterator(); }
 
     const exterior_type
