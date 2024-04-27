@@ -5,12 +5,17 @@
 
 #include <ATen/TensorAccessor.h>
 
+#include <torch_geopooling/formatting.h>
+#include <torch_geopooling/functional.h>
 #include <torch_geopooling/quadpool.h>
 #include <torch_geopooling/quadtree_options.h>
 #include <torch_geopooling/quadtree_set.h>
 
 
 namespace torch_geopooling {
+
+
+using namespace torch::indexing;
 
 
 template<typename Scalar, int N>
@@ -89,14 +94,17 @@ private:
 /// On object creation, it creates a tile index for fast access to the weights and biases.
 /// Additionally, it checks validity of input data (tiles, indices, weight, bias, etc.), to
 /// ensure it can be used to compute the operation.
-template<typename Coordinate = double, typename TileIndex = int32_t>
+template<typename Coordinate = double, typename Index = int32_t>
 struct quadtree_op
 {
-    using tiles_iterator = tensor_iterator2d<TileIndex, 3>;
+    using tiles_iterator = tensor_iterator2d<Index, 3>;
     using input_iterator = tensor_iterator2d<Coordinate, 2>;
 
     using quadtree_exterior = c10::ArrayRef<Coordinate>;
-    using quadtree_index = std::unordered_map<Tile, TileIndex>;
+    using quadtree_index = std::unordered_map<Tile, Index>;
+
+    using tensor_reference = const torch::Tensor&;
+    using tensor_index = at::indexing::TensorIndex;
 
     std::string m_op;
     quadtree_set<Coordinate> m_set;
@@ -104,26 +112,31 @@ struct quadtree_op
     /// Tile index is comprised of terminal quadtree nodes.
     quadtree_index m_tile_index;
 
+    /// An indicator that operation is executed as part of the training path.
+    bool m_training;
+
     quadtree_op(
         std::string op,
         tiles_iterator tiles_it,
         const quadtree_exterior& exterior,
-        const quadtree_options& options
+        const quadtree_options& options,
+        bool training
     )
     : m_op(op),
       m_set(tiles_it.begin(), tiles_it.end(), check_exterior(exterior).vec(), options),
-      m_tile_index()
+      m_tile_index(),
+      m_training(training)
     { }
 
     quadtree_op(
         std::string op,
-        const torch::Tensor& tiles,
-        const torch::Tensor& input,
+        tensor_reference tiles,
+        tensor_reference input,
         const quadtree_exterior& exterior,
         const quadtree_options& options,
         bool training
     )
-    : quadtree_op(op, tiles_iterator(check_tiles(tiles)), exterior, options)
+    : quadtree_op(op, tiles_iterator(check_tiles(tiles)), exterior, options, training)
     {
         if (training) {
             input_iterator input_it(check_input(input));
@@ -143,19 +156,23 @@ struct quadtree_op
     }
 
     input_iterator
-    make_input_iterator(const torch::Tensor& input)
+    make_input_iterator(tensor_reference input)
     {
         return input_iterator(input);
     }
 
     torch::Tensor
-    forward_tiles(const torch::TensorOptions& tiles_options) const
+    forward_tiles(tensor_reference tiles) const
     {
+        if (!m_training) {
+            return tiles;
+        }
+
         std::vector<torch::Tensor> tile_rows;
 
         for (auto node_it = m_set.ibegin(); node_it != m_set.iend(); ++node_it) {
             auto tile = node_it->tile();
-            tile_rows.push_back(torch::tensor(tile.template vec<TileIndex>(), tiles_options));
+            tile_rows.push_back(torch::tensor(tile.template vec<Index>(), tiles.options()));
         }
 
         return torch::stack(tile_rows);
@@ -163,9 +180,9 @@ struct quadtree_op
 
     std::tuple<torch::Tensor, torch::Tensor>
     forward(
-        const torch::Tensor& weight,
-        const torch::Tensor& bias,
-        const at::indexing::TensorIndex& index
+        const tensor_index& index,
+        tensor_reference weight,
+        tensor_reference bias
     ) const
     {
         check_weight_and_bias(weight, bias);
@@ -174,6 +191,29 @@ struct quadtree_op
         torch::Tensor bias_out = bias.index(index);
 
         return std::make_tuple(weight_out, bias_out);
+    }
+
+    std::tuple<torch::Tensor, torch::Tensor>
+    forward(
+        const std::vector<Index>& index,
+        tensor_reference weight,
+        tensor_reference bias
+    ) const
+    {
+        return forward(tensor_index(torch::tensor(index)), weight, bias);
+    }
+
+    torch::Tensor
+    forward_weight(const tensor_index& index, tensor_reference weight) const
+    {
+        check_weight(weight);
+        return weight.index(index);
+    }
+
+    torch::Tensor
+    forward_weight(const std::vector<Index>& index, tensor_reference weight) const
+    {
+        return forward_weight(tensor_index(torch::tensor(index)), weight);
     }
 
 private:
@@ -188,8 +228,8 @@ private:
         return exterior;
     }
 
-    const torch::Tensor&
-    check_tiles(const torch::Tensor& tiles) const
+    tensor_reference
+    check_tiles(tensor_reference tiles) const
     {
         TORCH_CHECK(
             tiles.dim() == 2,
@@ -206,8 +246,8 @@ private:
         return tiles;
     }
 
-    const torch::Tensor&
-    check_input(const torch::Tensor& input) const
+    tensor_reference
+    check_input(tensor_reference input) const
     {
         TORCH_CHECK(
             input.dim() == 2,
@@ -224,12 +264,19 @@ private:
     }
 
     void
-    check_weight_and_bias(const torch::Tensor& weight, const torch::Tensor& bias) const
+    check_weight(tensor_reference weight) const
     {
         TORCH_CHECK(
             weight.dim() == 1,
             m_op, ": operation only supports 1D weight, got ", weight.dim(), "D"
         );
+    }
+
+    void
+    check_weight_and_bias(tensor_reference weight, tensor_reference bias) const
+    {
+        check_weight(weight);
+
         TORCH_CHECK(
             bias.dim() == 1,
             m_op, ": operation only supports 1D bias, got ", bias.dim(), "D"
@@ -239,8 +286,6 @@ private:
             m_op, ": weight (", weight.sizes(), ") and bias (", bias.sizes(), ") are differ in size"
         );
     }
-
-
 };
 
 
@@ -265,32 +310,28 @@ quad_pool2d(
 
     quadtree_op op("quad_pool2d", tiles, input, exterior, options, training);
 
-    std::vector<int32_t> out_indices;
+    std::vector<int32_t> indices;
 
     // This loop might raise an exception, when the tile returned by `set.find` operation
     // returns non-terminal node. This should not happen in practice.
     for (const auto& point : op.make_input_iterator(input)) {
         const auto& node = op.m_set.find(point);
         const auto& index = op.m_tile_index.at(node.tile());
-        out_indices.push_back(index);
+        indices.push_back(index);
     }
 
-    torch::Tensor tiles_out = training ? op.forward_tiles(tiles.options()) : tiles;
-
-    at::indexing::TensorIndex index(torch::tensor(out_indices));
-    auto [weight_out, bias_out] = op.forward(weight, bias, index);
+    torch::Tensor tiles_out = op.forward_tiles(tiles);
+    auto [weight_out, bias_out] = op.forward(indices, weight, bias);
 
     return std::make_tuple(tiles_out, weight_out, bias_out);
 }
 
 
-/*
-std::tuple<torch::Tensor, torch::Tensor, torch::Tensor>
+std::tuple<torch::Tensor, torch::Tensor>
 max_quad_pool2d(
     const torch::Tensor& tiles,
     const torch::Tensor& input,
     const torch::Tensor& weight,
-    const torch::Tensor& bias,
     const c10::ArrayRef<double>& exterior,
     bool training,
     std::optional<std::size_t> max_depth,
@@ -306,13 +347,34 @@ max_quad_pool2d(
 
     quadtree_op op("max_quad_pool2d", tiles, input, exterior, options, training);
 
-    for (const auto& point : op::input_iterator(input)) {
-        auto node_it = set.find_terminal_group(point);
-        for (const auto& node : node_it) {
+    std::vector<torch::Tensor> weight_out_vec;
+
+    for (const auto& point : op.make_input_iterator(input)) {
+        std::vector<int32_t> indices;
+
+        std::transform(
+            op.m_set.find_terminal_group(point),
+            op.m_set.end(),
+            std::back_insert_iterator(indices),
+            [op](auto node) -> int32_t {
+                return op.m_tile_index.at(node.tile());
+            }
+        );
+
+        if (indices.size() == 0) {
+            throw value_error(
+                "max_quad_pool2d: point {} cannot be mapped to terminal nodes", point
+            );
         }
+
+        weight_out_vec.push_back(op.forward_weight(indices, weight).max());
     }
+
+    torch::Tensor tiles_out = op.forward_tiles(tiles);
+    torch::Tensor weight_out = torch::stack(weight_out_vec);
+
+    return std::make_tuple(tiles_out, weight_out);
 }
-*/
 
 
 } // namespace torch_geopooling
