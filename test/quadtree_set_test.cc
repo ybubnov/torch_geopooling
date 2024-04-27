@@ -17,8 +17,6 @@ BOOST_AUTO_TEST_SUITE(Testquadtree_set)
 
 BOOST_AUTO_TEST_CASE(quadtree_set_contains)
 {
-    BOOST_TEST_MESSAGE("--- Check empty quadtree set contains points");
-
     quadtree_set set({0, 0, 10, 10});
 
     BOOST_CHECK(set.contains(std::pair(0, 0)));
@@ -33,8 +31,6 @@ BOOST_AUTO_TEST_CASE(quadtree_set_contains)
 
 BOOST_AUTO_TEST_CASE(quadtree_set_find_in_empty)
 {
-    BOOST_TEST_MESSAGE("--- Find nodes in empty quadtree set");
-
     quadtree_set set({0, 0, 10, 10});
 
     auto node = set.find(std::pair(2, 2));
@@ -44,8 +40,6 @@ BOOST_AUTO_TEST_CASE(quadtree_set_find_in_empty)
 
 BOOST_AUTO_TEST_CASE(quadtree_set_insert_and_find)
 {
-    BOOST_TEST_MESSAGE("--- Insert point and find node in quatree set");
-
     quadtree_set set({-10.0, -10.0, 20.0, 20.0});
     set.insert(std::make_pair(0.0, 0.0));
     set.insert(std::make_pair(1.0, 1.0));
@@ -63,8 +57,6 @@ BOOST_AUTO_TEST_CASE(quadtree_set_insert_and_find)
 
 BOOST_AUTO_TEST_CASE(quadtree_set_insert_depth_1)
 {
-    BOOST_TEST_MESSAGE("--- Quadtree set of depth 1");
-
     quadtree_set set({0, 0, 10, 10});
 
     set.insert(std::make_pair(1, 1));
@@ -79,8 +71,6 @@ BOOST_AUTO_TEST_CASE(quadtree_set_insert_depth_1)
 
 BOOST_AUTO_TEST_CASE(quadtree_set_insert_depth_3)
 {
-    BOOST_TEST_MESSAGE("--- Quadtree set of depth 3");
-
     quadtree_set set({0.0, 0.0, 10.0, 10.0});
 
     set.insert(std::make_pair(1.0, 1.0));
@@ -115,8 +105,6 @@ BOOST_AUTO_TEST_CASE(quadtree_set_insert_depth_3)
 
 BOOST_AUTO_TEST_CASE(quadtree_set_find_by_tile)
 {
-    BOOST_TEST_MESSAGE("--- Find node by tile in non-empty quadtree set");
-
     quadtree_set set({0.0, 0.0, 10.0, 10.0});
 
     set.insert(std::make_pair(1.0, 1.0));
@@ -145,8 +133,6 @@ BOOST_AUTO_TEST_CASE(quadtree_set_find_by_tile)
 
 BOOST_AUTO_TEST_CASE(quadtree_set_find_terminal_group)
 {
-    BOOST_TEST_MESSAGE("--- Find terminal group in non-empty quadtree set");
-
     quadtree_set set({0.0, 0.0, 10.0, 10.0});
 
     set.insert(std::make_pair(1.0, 1.0)); // depth = 0
@@ -197,8 +183,6 @@ BOOST_AUTO_TEST_CASE(quadtree_set_find_terminal_group)
 
 BOOST_AUTO_TEST_CASE(quadtree_set_from_tiles)
 {
-    BOOST_TEST_MESSAGE("--- Initialize quadtree set from tiles");
-
     std::vector<Tile> tiles = {
         Tile(0, 0, 0),
         Tile(1, 0, 0),
@@ -220,8 +204,6 @@ BOOST_AUTO_TEST_CASE(quadtree_set_from_tiles)
 
 BOOST_AUTO_TEST_CASE(quadtree_set_missing_parent)
 {
-    BOOST_TEST_MESSAGE("--- Ensure quadtree set initialization fails on missing parent");
-
     std::vector<Tile> tiles = {
         Tile(0, 0, 0),
         Tile(1, 1, 1),

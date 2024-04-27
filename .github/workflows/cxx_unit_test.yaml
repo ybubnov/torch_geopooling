@@ -50,4 +50,7 @@ jobs:
       run: cmake --build ${{github.workspace}}/build
 
     - name: Run unit-tests
-      run: make -C ${{github.workspace}}/build test ARGS="--verbose"
+      run: >
+        make -C ${{github.workspace}}/build test
+          ARGS="--verbose"
+          BOOST_TEST_LOG_LEVEL="message"

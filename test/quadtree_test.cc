@@ -14,8 +14,6 @@ BOOST_AUTO_TEST_SUITE(TestQuadtree)
 
 BOOST_AUTO_TEST_CASE(quadtree_is_terminal)
 {
-    BOOST_TEST_MESSAGE("--- Empty quadtree is terminal");
-
     quadtree tree({-180.0, -90.0, 360.0, 180.0});
 
     BOOST_CHECK(tree.is_terminal());
@@ -24,8 +22,6 @@ BOOST_AUTO_TEST_CASE(quadtree_is_terminal)
 
 BOOST_AUTO_TEST_CASE(quadtree_contains)
 {
-    BOOST_TEST_MESSAGE("--- Empty quadtree contains");
-
     quadtree tree({0, 0, 10, 10});
 
     BOOST_CHECK(tree.contains(std::pair(0, 0)));
@@ -40,8 +36,6 @@ BOOST_AUTO_TEST_CASE(quadtree_contains)
 
 BOOST_AUTO_TEST_CASE(quadtree_find_empty)
 {
-    BOOST_TEST_MESSAGE("--- Empty quadtree find");
-
     quadtree tree({0, 0, 10, 10});
 
     auto leaf = tree.find(std::pair(2, 2));
@@ -52,8 +46,6 @@ BOOST_AUTO_TEST_CASE(quadtree_find_empty)
 
 BOOST_AUTO_TEST_CASE(quadtree_insert_and_find)
 {
-    BOOST_TEST_MESSAGE("--- Find tree");
-
     quadtree tree({-10.0, -10.0, 20.0, 20.0});
     tree.insert(std::make_pair(0.0, 0.0), 0);
     tree.insert(std::make_pair(1.0, 1.0), 1);
@@ -71,8 +63,6 @@ BOOST_AUTO_TEST_CASE(quadtree_insert_and_find)
 
 BOOST_AUTO_TEST_CASE(quadtree_insert_depth_1)
 {
-    BOOST_TEST_MESSAGE("--- Quadtree of depth 1");
-
     quadtree tree({0, 0, 10, 10});
 
     tree.insert(std::make_pair(1, 1), 0);
@@ -87,8 +77,6 @@ BOOST_AUTO_TEST_CASE(quadtree_insert_depth_1)
 
 BOOST_AUTO_TEST_CASE(quadtree_insert_depth_3)
 {
-    BOOST_TEST_MESSAGE("--- Quadtree of depth 3");
-
     quadtree tree({0.0, 0.0, 10.0, 10.0});
 
     tree.insert(std::make_pair(1.0, 1.0), 0);
@@ -123,8 +111,6 @@ BOOST_AUTO_TEST_CASE(quadtree_insert_depth_3)
 
 BOOST_AUTO_TEST_CASE(quadtree_find_by_tile)
 {
-    BOOST_TEST_MESSAGE("--- Quadtree find node by tile");
-
     quadtree tree({0.0, 0.0, 10.0, 10.0});
 
     tree.insert(std::make_pair(1.0, 1.0), 0);
