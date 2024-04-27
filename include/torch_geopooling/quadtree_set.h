@@ -252,6 +252,15 @@ public:
         return quadtree_set_iterator(this, node.tile().parent());
     }
 
+    iterator
+    find_terminal_group(
+        const key_array_type& point,
+        std::optional<std::size_t> max_depth = std::nullopt
+    )
+    {
+        return find_terminal_group(key_type(point[0], point[1]), max_depth);
+    }
+
     node_type&
     find(const key_type& point, std::optional<std::size_t> max_depth = std::nullopt)
     {
