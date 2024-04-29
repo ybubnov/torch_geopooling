@@ -41,6 +41,9 @@ BOOST_AUTO_TEST_CASE(max_quad_pool2d_training)
 
     BOOST_CHECK(weight_out.requires_grad());
 
+    weight_out.mean().backward();
+    BOOST_CHECK(weight.grad().defined());
+
     auto input_test = torch::tensor({{1.8, 1.8}}, tensor_options);
 
     std::tie(tiles_out, weight_out) = max_quad_pool2d(

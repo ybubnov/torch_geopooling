@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include <ATen/Functions.h>
 #include <ATen/TensorAccessor.h>
 
 #include <torch_geopooling/formatting.h>
@@ -104,7 +105,6 @@ struct quadtree_op
     using quadtree_index = std::unordered_map<Tile, Index>;
 
     using tensor_reference = const torch::Tensor&;
-    using tensor_index = at::indexing::TensorIndex;
 
     std::string m_op;
     quadtree_set<Coordinate> m_set;
@@ -180,15 +180,15 @@ struct quadtree_op
 
     std::tuple<torch::Tensor, torch::Tensor>
     forward(
-        const tensor_index& index,
+        tensor_reference index,
         tensor_reference weight,
         tensor_reference bias
     ) const
     {
         check_weight_and_bias(weight, bias);
 
-        torch::Tensor weight_out = weight.index(index);
-        torch::Tensor bias_out = bias.index(index);
+        torch::Tensor weight_out = at::index_select(weight, 0, index);
+        torch::Tensor bias_out = at::index_select(bias, 0, index);
 
         return std::make_tuple(weight_out, bias_out);
     }
@@ -200,20 +200,20 @@ struct quadtree_op
         tensor_reference bias
     ) const
     {
-        return forward(tensor_index(torch::tensor(index)), weight, bias);
+        return forward(torch::tensor(index), weight, bias);
     }
 
     torch::Tensor
-    forward_weight(const tensor_index& index, tensor_reference weight) const
+    forward_weight(tensor_reference index, tensor_reference weight) const
     {
         check_weight(weight);
-        return weight.index(index);
+        return at::index_select(weight, 0, index);
     }
 
     torch::Tensor
     forward_weight(const std::vector<Index>& index, tensor_reference weight) const
     {
-        return forward_weight(tensor_index(torch::tensor(index)), weight);
+        return forward_weight(torch::tensor(index), weight);
     }
 
 private:
