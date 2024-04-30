@@ -1,11 +1,9 @@
 from typing import Tuple
 
 import torch
-from torch import nn
-from torch import Tensor
+from torch import Tensor, nn
 
 from torch_geopooling import functional as F
-
 
 __all__ = ["MaxQuadPool2d", "QuadPool2d"]
 
@@ -42,9 +40,7 @@ class _QuadPool(nn.Module):
         )
 
 
-
 class QuadPool2d(_QuadPool):
-
     def initialize_parameters(self) -> None:
         self.weight = nn.Parameter(torch.ones([self.kernel_size], dtype=torch.float64))
         self.bias = nn.Parameter(torch.zeros([self.kernel_size], dtype=torch.float64))
@@ -75,7 +71,6 @@ class QuadPool2d(_QuadPool):
 
 
 class MaxQuadPool2d(_QuadPool):
-
     def initialize_parameters(self) -> None:
         self.weight = nn.Parameter(torch.ones([self.kernel_size], dtype=torch.float64))
 

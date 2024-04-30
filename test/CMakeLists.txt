@@ -7,7 +7,7 @@ add_definitions(-std=c++17)
 file(GLOB torch_geopooling_TEST_SOURCES *.cc)
 
 foreach(torch_geopooling_TEST_SOURCE ${torch_geopooling_TEST_SOURCES})
-    # Extract extension fomr file name.
+    # Extract extension from the file name.
     get_filename_component(torch_geopooling_TEST ${torch_geopooling_TEST_SOURCE} NAME_WE)
 
     add_executable(${torch_geopooling_TEST} ${torch_geopooling_TEST_SOURCE})

@@ -1,11 +1,9 @@
-from typing import Optional
-from typing import Tuple
+from typing import Optional, Tuple
 
 from torch import Tensor
 
 import torch_geopooling._C as _C
 import torch_geopooling.return_types as return_types
-
 
 __all__ = ["max_quad_pool2d", "quad_pool2d"]
 

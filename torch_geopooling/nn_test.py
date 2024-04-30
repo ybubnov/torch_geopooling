@@ -1,7 +1,7 @@
 import torch
 from torch.nn import L1Loss
-from torch_geopooling.nn import QuadPool2d
-from torch_geopooling.nn import MaxQuadPool2d
+
+from torch_geopooling.nn import MaxQuadPool2d, QuadPool2d
 
 
 def test_quad_pool2d_loss() -> None:

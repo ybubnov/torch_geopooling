@@ -59,7 +59,7 @@ Tile::child(std::size_t x, std::size_t y) const
         throw value_error("Tile: x ({}) value should be either 0 or 1", x);
     }
     if (y > 1) {
-        throw value_error("Tile: y ({}) value shoule be either 0 or 1", y);
+        throw value_error("Tile: y ({}) value should be either 0 or 1", y);
     }
     return Tile(m_z + 1, m_x * 2 + x, m_y * 2 + y);
 }

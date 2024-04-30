@@ -1,15 +1,8 @@
 from __future__ import annotations
 
-from enum import auto
-from enum import Enum
-from typing import Tuple
-from typing import List
-from typing import Iterator
-from typing import Set
-from typing import NamedTuple
+from typing import Iterator, NamedTuple, Tuple
 
 from torch import Tensor
-
 
 __all__ = ["TileWKT"]
 
@@ -24,16 +17,15 @@ class _Tile(NamedTuple):
 
 
 class _TileSet(set):
-
     def __init__(self, tiles: Tensor) -> None:
         super().__init__(_Tile(*tile.detach().tolist()) for tile in tiles)
 
     def is_terminal(self, tile: _Tile) -> bool:
         return (
-            (tile.child(0, 0) not in self) and
-            (tile.child(0, 1) not in self) and
-            (tile.child(1, 0) not in self) and
-            (tile.child(1, 1) not in self)
+            (tile.child(0, 0) not in self)
+            and (tile.child(0, 1) not in self)
+            and (tile.child(1, 0) not in self)
+            and (tile.child(1, 1) not in self)
         )
 
 
@@ -45,7 +37,7 @@ class TileWKT:
     Args:
         exterior (tuple): Exterior coordinates in xywh format. The exterior is used to calculate
             boundaries of a tile to produce a final WKT.
-        precision (float): A precision of the resulting geometry, digits after the deciman point.
+        precision (int): A precision of the resulting geometry, digits after the deciman point.
         internal (bool): When True, output includes internal nodes of the Quadtree tiles.
             Otherwise (default) returns only geometry of terminal nodes.
     """
@@ -53,7 +45,7 @@ class TileWKT:
     def __init__(
         self,
         exterior: Tuple[float, float, float, float],
-        precision: float = 7,
+        precision: int = 7,
         internal: bool = False,
     ) -> None:
         self.exterior = tuple(map(float, exterior))
