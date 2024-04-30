@@ -64,10 +64,10 @@ class QuadPool2d(_QuadPool):
             self.weight,
             self.bias,
             self.exterior,
-            self.training,
-            self.max_depth,
-            self.capacity,
-            self.precision,
+            training=self.training,
+            max_depth=self.max_depth,
+            capacity=self.capacity,
+            precision=self.precision,
         )
         if self.training:
             self.tiles = result.tiles
@@ -92,10 +92,10 @@ class MaxQuadPool2d(_QuadPool):
             input,
             self.weight,
             self.exterior,
-            self.training,
-            self.max_depth,
-            self.capacity,
-            self.precision,
+            training=self.training,
+            max_depth=self.max_depth,
+            capacity=self.capacity,
+            precision=self.precision,
         )
         if self.training:
             self.tiles = result.tiles
