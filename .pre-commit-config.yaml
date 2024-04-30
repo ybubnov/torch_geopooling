@@ -16,7 +16,7 @@ repos:
     - id: ruff
       name: "Run Ruff Python linting"
     - id: ruff-format
-      name: "Rune Ruff Python formatting"
+      name: "Run Ruff Python formatting"
 -   repo: https://github.com/codespell-project/codespell
     rev: v2.2.4
     hooks:
