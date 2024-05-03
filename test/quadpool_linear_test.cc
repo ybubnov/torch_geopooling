@@ -13,7 +13,7 @@ using namespace torch_geopooling;
 BOOST_AUTO_TEST_SUITE(TestQuadPool)
 
 
-BOOST_AUTO_TEST_CASE(quad_pool2d_training_unchanged)
+BOOST_AUTO_TEST_CASE(linear_quad_pool2d_training_unchanged)
 {
     auto tiles_options = torch::TensorOptions()
         .dtype(torch::kInt32)
@@ -34,7 +34,7 @@ BOOST_AUTO_TEST_CASE(quad_pool2d_training_unchanged)
     auto weight = torch::rand({100}, tensor_options);
     auto bias = torch::rand({100}, tensor_options);
 
-    auto [tiles_out, weight_out, bias_out] = quad_pool2d(
+    auto [tiles_out, weight_out, bias_out] = linear_quad_pool2d(
         tiles, input, weight, bias, {0.0, 0.0, 10.0, 10.0}, true
     );
 
@@ -56,7 +56,7 @@ BOOST_AUTO_TEST_CASE(quad_pool2d_training_unchanged)
 }
 
 
-BOOST_AUTO_TEST_CASE(quad_pool2d_training)
+BOOST_AUTO_TEST_CASE(linear_quad_pool2d_training)
 {
     auto tiles_options = torch::TensorOptions().dtype(torch::kInt32);
     auto tiles = torch::empty({0, 3}, tiles_options);
@@ -73,7 +73,7 @@ BOOST_AUTO_TEST_CASE(quad_pool2d_training)
         {8.0, 8.0}
     }, tensor_options);
 
-    auto [tiles_out, weight_out, bias_out] = quad_pool2d(
+    auto [tiles_out, weight_out, bias_out] = linear_quad_pool2d(
         tiles, input, weight, bias, {0.0, 0.0, 10.0, 10.0}, true
     );
 

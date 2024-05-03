@@ -1,24 +1,39 @@
-from typing import Tuple
+# Copyright (C) 2024, Yakau Bubnou
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+from typing import Optional, Tuple
 
 import torch
 from torch import Tensor, nn
 
 from torch_geopooling import functional as F
 
-__all__ = ["MaxQuadPool2d", "QuadPool2d"]
+__all__ = ["LinearQuadPool2d", "MaxQuadPool2d"]
 
 
 class _QuadPool(nn.Module):
     def __init__(
         self,
-        kernel_size: int,
+        num_features: int,
         exterior: Tuple[float, float, float, float],
         max_depth: int = 17,
         capacity: int = 1,
-        precision: int = 7,
+        precision: Optional[int] = 7,
     ) -> None:
         super().__init__()
-        self.kernel_size = kernel_size
+        self.num_features = num_features
         self.exterior = tuple(map(float, exterior))
         self.max_depth = max_depth
         self.capacity = capacity
@@ -35,15 +50,44 @@ class _QuadPool(nn.Module):
 
     def extra_repr(self) -> str:
         return (
-            "{kernel_size}, exterior={exterior}, capacity={capacity}, max_depth={max_depth}, "
-            "precision={precision}".format(**self.__dict__)
+            "num_features={num_features}, exterior={exterior}, capacity={capacity}, "
+            "max_depth={max_depth}, precision={precision}".format(**self.__dict__)
         )
 
 
-class QuadPool2d(_QuadPool):
+class LinearQuadPool2d(_QuadPool):
+    """Applies linear transformations over Quadtree decomposition of input 2D coordinates.
+
+    The module internally build a lookup quadtree to group closely located 2D-points. With
+    each terminal node of the resulting quadtree, a weight and bias is associated. So when
+    an input coordinate is passed, a terminal node is being looked up and associated with
+    that node weight and bias is returned. Module applies linear transformation for each input
+    coordinate.
+
+    Args:
+        num_features: Number of features (linear transformations). Equals to the number of
+            terminal nodes in the quadtree.
+        exterior: Geometrical boundary of the learning space in (X, Y, W, H) format.
+        max_depth: Maximum depth of the quadtree. Default: 17.
+        capacity: Maximum number of inputs, after which a quadtree's node is subdivided and
+            depth of the tree grows. Default: 1.
+        precision: Optional rounding of the input coordinates. Default: 7.
+
+    Examples:
+
+        >>> # 48 linear transformations over a 2d space.
+        >>> pool = nn.LinearQuadPool2d(48, (-10, -5, 20, 10))
+        >>> # Grow tree up to 4-th level and sub-divides a node after 8 coordinates in a quad.
+        >>> pool = nn.LinearQuadPool2d(48, (-10, -5, 20, 10), max_depth=4, capacity=8)
+        >>> # Create 2D coordinates and feature vector associated with them.
+        >>> input = torch.rand((1024, 2), dtype=torch.float64) * 10 - 5
+        >>> x = torch.randn((1024,), dtype=torch.float64)
+        >>> output = pool(input, x)
+    """
+
     def initialize_parameters(self) -> None:
-        self.weight = nn.Parameter(torch.ones([self.kernel_size], dtype=torch.float64))
-        self.bias = nn.Parameter(torch.zeros([self.kernel_size], dtype=torch.float64))
+        self.weight = nn.Parameter(torch.ones([self.num_features], dtype=torch.float64))
+        self.bias = nn.Parameter(torch.zeros([self.num_features], dtype=torch.float64))
 
         self.register_buffer("tiles", torch.empty((0, 3), dtype=torch.int32))
         self.tiles: Tensor
@@ -54,7 +98,7 @@ class QuadPool2d(_QuadPool):
         nn.init.zeros_(self.bias)
 
     def forward(self, input: Tensor, x: Tensor) -> Tensor:
-        result = F.quad_pool2d(
+        result = F.linear_quad_pool2d(
             self.tiles,
             input,
             self.weight,
@@ -71,8 +115,37 @@ class QuadPool2d(_QuadPool):
 
 
 class MaxQuadPool2d(_QuadPool):
+    """Applies maximum pooling over Quadtree decomposition of input 2D coordinates.
+
+    The module internally build a lookup quadtree to group closely located 2D-points. With
+    each terminal node of the resulting quadtree, a weight value. For each input coordinate,
+    module queries a "terminal group" on nodes and computes maximum value from a `weight` vector.
+
+    Module returns a multiplication of maximum weight and input feature associated with an
+    input coordinate.
+
+    Terminal group - is a set of terminal nodes in a quadtree that share the same parent as
+    an input coordinate.
+
+    Args:
+        num_features: Number of features, or terminal nodes, in the Quadtree decomposition.
+        exterior: Geometrical boundary of the learning space in (X, Y, W, H) format.
+        max_depth: Maximum depth of the quadtree. Default: 17.
+        capacity: Maximum number of inputs, after which a quadtree's node is subdivided and
+            depth of the tree grows. Default: 1.
+        precision: Optional rounding of the input coordinates. Default: 7.
+
+    Examples:
+
+        >>> pool = nn.MaxQuadPool2d(256, (-10, -5, 20, 10), max_depth=5)
+        >>> # Create 2D coordinates and feature vector associated with them.
+        >>> input = torch.rand((2048, 2), dtype=torch.float64) * 10 - 5
+        >>> x = torch.randn((1024,), dtype=torch.float64)
+        >>> output = pool(input, x)
+    """
+
     def initialize_parameters(self) -> None:
-        self.weight = nn.Parameter(torch.ones([self.kernel_size], dtype=torch.float64))
+        self.weight = nn.Parameter(torch.ones([self.num_features], dtype=torch.float64))
 
         self.register_buffer("tiles", torch.empty((0, 3), dtype=torch.int32))
         self.tiles: Tensor

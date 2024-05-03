@@ -11,7 +11,7 @@ namespace torch_geopooling {
 
 
 std::tuple<torch::Tensor, torch::Tensor, torch::Tensor>
-quad_pool2d(
+linear_quad_pool2d(
     const torch::Tensor& tiles,
     const torch::Tensor& input,
     const torch::Tensor& weight,

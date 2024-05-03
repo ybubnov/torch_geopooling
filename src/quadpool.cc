@@ -290,7 +290,7 @@ private:
 
 
 std::tuple<torch::Tensor, torch::Tensor, torch::Tensor>
-quad_pool2d(
+linear_quad_pool2d(
     const torch::Tensor& tiles,
     const torch::Tensor& input,
     const torch::Tensor& weight,
@@ -308,7 +308,7 @@ quad_pool2d(
         .precision(precision)
         .capacity(capacity);
 
-    quadtree_op op("quad_pool2d", tiles, input, exterior, options, training);
+    quadtree_op op("linear_quad_pool2d", tiles, input, exterior, options, training);
 
     std::vector<int32_t> indices;
 
