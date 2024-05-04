@@ -47,13 +47,13 @@ class _TileSet(set):
 class TileWKT:
     """Convert a Tile to a WKT polygon given the exterior of the whole geometry.
 
-    Module returns a tuple comprised of a tile geometry in WKT format, which comprises a polygon.
+    Module returns a tile geometry in WKT format, which comprises a polygon.
 
     Args:
-        exterior (tuple): Exterior coordinates in xywh format. The exterior is used to calculate
+        exterior: Exterior coordinates in (X, Y, W, H) format. The exterior is used to calculate
             boundaries of a tile to produce a final WKT.
-        precision (int): A precision of the resulting geometry, digits after the deciman point.
-        internal (bool): When True, output includes internal nodes of the Quadtree tiles.
+        precision: A precision of the resulting geometry, digits after the decimal point.
+        internal: When `True`, output includes internal nodes of the Quadtree tiles.
             Otherwise (default) returns only geometry of terminal nodes.
     """
 
@@ -68,6 +68,10 @@ class TileWKT:
         self.internal = internal
 
         self._xmin, self._ymin, self._width, self._height = exterior
+        if self._width <= 0:
+            raise ValueError(f"exterior width should be >0, got {self._width}")
+        if self._height <= 0:
+            raise ValueError(f"exterior height should be >0, got {self._height}")
 
     def __call__(self, tiles: Tensor) -> Iterator[str]:
         if len(tiles.size()) != 2:

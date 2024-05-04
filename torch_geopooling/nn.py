@@ -58,11 +58,11 @@ class _QuadPool(nn.Module):
 class LinearQuadPool2d(_QuadPool):
     """Applies linear transformations over Quadtree decomposition of input 2D coordinates.
 
-    The module internally build a lookup quadtree to group closely located 2D-points. With
-    each terminal node of the resulting quadtree, a weight and bias is associated. So when
-    an input coordinate is passed, a terminal node is being looked up and associated with
-    that node weight and bias is returned. Module applies linear transformation for each input
-    coordinate.
+    This module constructs an internal lookup quadtree to organize closely situated 2D points.
+    Each terminal node in the resulting quadtree is paired with a weight and bias. Thus, when
+    providing an input coordinate, the module retrieves the corresponding termina node and
+    returns its associated weight and bias. Then module applies a linear transformation to each
+    input coordinate.
 
     Args:
         num_features: Number of features (linear transformations). Equals to the number of
@@ -117,15 +117,16 @@ class LinearQuadPool2d(_QuadPool):
 class MaxQuadPool2d(_QuadPool):
     """Applies maximum pooling over Quadtree decomposition of input 2D coordinates.
 
-    The module internally build a lookup quadtree to group closely located 2D-points. With
-    each terminal node of the resulting quadtree, a weight value. For each input coordinate,
-    module queries a "terminal group" on nodes and computes maximum value from a `weight` vector.
+    This module constructs an internal lookup quadtree to organize closely situated 2D points.
+    Each terminal node in the resulting quadtree is assigned a weight value. For each input
+    coordinate, the module queries a "terminal group" of nodes and calculates the maximum value
+    from a `weight` vector associated with these nodes.
 
-    Module returns a multiplication of maximum weight and input feature associated with an
-    input coordinate.
+    The module then returns the product of the maximum weight and the input feature associated
+    with the input coordinate.
 
-    Terminal group - is a set of terminal nodes in a quadtree that share the same parent as
-    an input coordinate.
+    A terminal group refers to a collection of terminal nodes within the quadtree that share the
+    same parent as the input coordinate.
 
     Args:
         num_features: Number of features, or terminal nodes, in the Quadtree decomposition.
