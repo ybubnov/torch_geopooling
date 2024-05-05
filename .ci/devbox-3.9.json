@@ -7,6 +7,7 @@
     "python39Packages.pybind11":          "latest",
     "python39Packages.pytest":            "latest",
     "python39Packages.setuptools":        "latest",
+    "python39Packages.sympy":             "latest",
     "python39Packages.torch":             "latest",
     "python39Packages.typing-extensions": "latest",
     "python39Packages.wheel":             "latest",

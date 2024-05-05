@@ -7,6 +7,7 @@
     "python310Packages.pybind11":          "latest",
     "python310Packages.pytest":            "latest",
     "python310Packages.setuptools":        "latest",
+    "python310Packages.sympy":             "latest",
     "python310Packages.torch":             "latest",
     "python310Packages.typing-extensions": "latest",
     "python310Packages.wheel":             "latest",

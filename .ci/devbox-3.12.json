@@ -7,6 +7,7 @@
     "python312Packages.pybind11":          "latest",
     "python312Packages.pytest":            "latest",
     "python312Packages.setuptools":        "latest",
+    "python312Packages.sympy":             "latest",
     "python312Packages.torch":             "latest",
     "python312Packages.typing-extensions": "latest",
     "python312Packages.wheel":             "latest",
