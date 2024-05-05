@@ -1,7 +1,47 @@
+from __future__ import annotations
+
+import re
+from enum import Enum
 from pathlib import Path
+from typing import Optional
 
 from setuptools import setup
+from torch.__config__ import parallel_info
 from torch.utils import cpp_extension
+
+
+class TorchParallelBackend(Enum):
+    OPENMP = "OpenMP"
+    NATIVE = "native thread pool"
+    NATIVE_TBB = "native thread pool and TBB"
+
+    @classmethod
+    def library_backend(cls) -> Optional[TorchParallelBackend]:
+        info = parallel_info()
+        matches = re.findall(r"^ATen parallel backend: ([\ \w]+)$", info, flags=re.MULTILINE)
+        if len(matches) == 0:
+            return None
+
+        return cls(matches.pop())
+
+
+def cpp_parallel_extension(*args, **kwargs):
+    backend = TorchParallelBackend.library_backend()
+
+    compile_args = []
+    if backend is TorchParallelBackend.OPENMP:
+        compile_args = ["-DAT_PARALLEL_OPENMP", "-fopenmp"]
+    elif backend is TorchParallelBackend.NATIVE:
+        compile_args = ["-DAT_PARALLEL_NATIVE"]
+    elif backend is TorchParallelBackend.NATIVE_TBB:
+        compile_args = ["-DAT_PARALLEL_NATIVE_TBB"]
+
+    extra_compile_args = kwargs.get("extra_compile_args", [])
+    extra_compile_args += compile_args
+    kwargs["extra_compile_args"] = extra_compile_args
+
+    return cpp_extension.CppExtension(*args, **kwargs)
+
 
 setup(
     name="torch_geopooling",
@@ -28,7 +68,7 @@ setup(
         "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
     ],
     ext_modules=[
-        cpp_extension.CppExtension(
+        cpp_parallel_extension(
             name="torch_geopooling._C",
             sources=[
                 "src/quadpool.cc",
@@ -37,7 +77,6 @@ setup(
                 "torch_geopooling/__bind__/python_module.cc",
             ],
             include_dirs=[str(Path.cwd() / "include")],
-            libraries=["torch", "c10"],
             extra_compile_args=["-DFMT_HEADER_ONLY=1"],
         ),
     ],

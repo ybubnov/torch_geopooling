@@ -19,41 +19,24 @@ jobs:
       - name: Run pre-commit
         run: pre-commit run --all-files --show-diff-on-failure --color=always
 
-
   unit-tests:
     strategy:
       matrix:
         python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
     runs-on: ubuntu-latest
-    container:
-      image: python:${{matrix.python-version}}
 
     steps:
     - name: Checkout source code
       uses: actions/checkout@v4
 
-    - name: Configure apt to disable recommendations installation
-      run: |
-        echo 'APT::Install-Recommends "false";' >> /etc/apt/apt.conf
-        echo 'APT::Install-Suggests "false";' >> /etc/apt/apt.conf
+    - name: Install devbox
+      uses: jetify-com/devbox-install-action@v0.10.0
 
-    - name: Install third-party libraries and tools
-      run: |
-        apt-get update
-        apt-get install -y cmake build-essential libboost-test-dev libfmt-dev wget unzip
-
-    - name: Check Python version
-      run: python --version
-
-    - name: Install Python dependencies
-      run: |
-        pip install 'torch>=2.2.0+cpu' --index-url https://download.pytorch.org/whl/cpu
-        pip install numpy pytest
+    - name: Setup devbox environment
+      run: ln -sf .ci/devbox-{{ python-version }}.json devbox.json
 
     - name: Build and install
-      run: |
-        python setup.py build
-        find build -name '_C.*.so' -exec cp '{}' torch_geopooling/ \;
+      run: devbox run python setup.py build_ext --inplace
 
     - name: Run unit-tests
-      run: pytest -vv
+      run: devbox run pytest -vv -s
