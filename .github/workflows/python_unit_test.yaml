@@ -33,7 +33,7 @@ jobs:
       uses: jetify-com/devbox-install-action@v0.10.0
 
     - name: Setup devbox environment
-      run: ln -sf .ci/devbox-{{ matrix.python-version }}.json devbox.json
+      run: echo $PWD && echo ".ci/devbox-{{ matrix.python-version }}.json" && ln -sf ".ci/devbox-{{ matrix.python-version }}.json" devbox.json
 
     - name: Build and install
       run: devbox run python setup.py build_ext --inplace

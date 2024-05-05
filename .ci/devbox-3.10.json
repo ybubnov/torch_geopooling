@@ -24,8 +24,8 @@
   },
   "shell": {
     "init_hook": [
-        "rm -rf .eggs",
-        ". $VENV_DIR/bin/activate"
+      "rm -rf .eggs",
+      ". $VENV_DIR/bin/activate"
     ]
   }
 }
