@@ -11,7 +11,7 @@ void
 hash_combine(SizeT& seed, T value)
 {
     hash<T> make_hash;
-    seed ^= make_hash(value) + 0x9e3779b9 + (seed<<6) + (seed>>2);
+    seed ^= make_hash(value) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 }
 
 

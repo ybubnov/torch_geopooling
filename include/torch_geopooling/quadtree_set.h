@@ -269,9 +269,9 @@ public:
         Tile tile = Tile::root;
         node_type* node = &m_nodes.at(tile);
 
-        max_depth = std::min(max_depth.value_or(m_total_depth + 1), m_options.max_depth());
+        std::size_t max_z = std::min(max_depth.value_or(m_total_depth + 1), m_options.max_depth());
 
-        while (tile.z() < max_depth) {
+        while (tile.z() < max_z) {
             auto centroid = node->exterior().centroid();
 
             std::size_t x = 0, y = 0;

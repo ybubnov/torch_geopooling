@@ -4,6 +4,7 @@
 #include <vector>
 
 #include <ATen/Functions.h>
+#include <ATen/Parallel.h>
 #include <ATen/TensorAccessor.h>
 
 #include <torch_geopooling/formatting.h>
@@ -68,14 +69,18 @@ public:
     }
 
     value_type
-    operator*()
+    operator[](std::size_t idx) const
     {
         value_type row;
         for (auto i = 0; i < N; i++) {
-            row[i] = m_accessor[m_begin][i];
+            row[i] = m_accessor[idx][i];
         }
         return row;
     }
+
+    value_type
+    operator*()
+    { return (*this)[m_begin]; }
 
     bool
     operator!=(const iterator& rhs)
@@ -347,28 +352,37 @@ max_quad_pool2d(
 
     quadtree_op op("max_quad_pool2d", tiles, input, exterior, options, training);
 
-    std::vector<torch::Tensor> weight_out_vec;
+    const int64_t grain_size = at::internal::GRAIN_SIZE;
+    const int64_t total_size = input.size(0);
 
-    for (const auto& point : op.make_input_iterator(input)) {
-        std::vector<int32_t> indices;
+    std::vector<torch::Tensor> weight_out_vec(total_size);
 
-        std::transform(
-            op.m_set.find_terminal_group(point),
-            op.m_set.end(),
-            std::back_insert_iterator(indices),
-            [op](auto node) -> int32_t {
-                return op.m_tile_index.at(node.tile());
-            }
-        );
+    auto input_it = op.make_input_iterator(input);
 
-        if (indices.size() == 0) {
-            throw value_error(
-                "max_quad_pool2d: point {} cannot be mapped to terminal nodes", point
+    at::parallel_for(0, total_size, grain_size, [&](int64_t begin, int64_t end) {
+        for (const auto i : c10::irange(begin, end)) {
+            std::vector<int32_t> indices;
+            const auto& point = input_it[i];
+
+            std::transform(
+                op.m_set.find_terminal_group(point),
+                op.m_set.end(),
+                std::back_insert_iterator(indices),
+                [&](auto node) -> int32_t {
+                    return op.m_tile_index.at(node.tile());
+                }
             );
-        }
 
-        weight_out_vec.push_back(op.forward_weight(indices, weight).max());
-    }
+            if (indices.size() == 0) {
+                throw value_error(
+                    "max_quad_pool2d: point {} cannot be mapped to terminal nodes", point
+                );
+            }
+
+            auto tg = op.m_set.find_terminal_group(point);
+            weight_out_vec[i] = op.forward_weight(indices, weight).max();
+        }
+    });
 
     torch::Tensor tiles_out = op.forward_tiles(tiles);
     torch::Tensor weight_out = torch::stack(weight_out_vec);
