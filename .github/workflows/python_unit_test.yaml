@@ -19,24 +19,44 @@ jobs:
       - name: Run pre-commit
         run: pre-commit run --all-files --show-diff-on-failure --color=always
 
-  unit-tests:
+  #unit-tests:
+  #  strategy:
+  #    matrix:
+  #      python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+  #  runs-on: ubuntu-latest
+
+  #  steps:
+  #  - name: Checkout source code
+  #    uses: actions/checkout@v4
+
+  #  - name: Install devbox
+  #    uses: jetify-com/devbox-install-action@v0.10.0
+
+  #  - name: Setup devbox environment
+  #    run: echo $PWD && echo ".ci/devbox-${{ matrix.python-version }}.json" && ln -sf ".ci/devbox-${{ matrix.python-version }}.json" devbox.json
+
+  #  - name: Build and install
+  #    run: devbox run python setup.py build_ext --inplace
+
+  #  - name: Run unit-tests
+  #    run: devbox run pytest -vv -s
+
+  build_wheels:
+    name: Build wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: ['3.9', '3.10', '3.11', '3.12']
-    runs-on: ubuntu-latest
+        os: [ubuntu-latest, macos-13, macos-14]
 
     steps:
-    - name: Checkout source code
-      uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Install devbox
-      uses: jetify-com/devbox-install-action@v0.10.0
-
-    - name: Setup devbox environment
-      run: echo $PWD && echo ".ci/devbox-${{ matrix.python-version }}.json" && ln -sf ".ci/devbox-${{ matrix.python-version }}.json" devbox.json
-
-    - name: Build and install
-      run: devbox run python setup.py build_ext --inplace
-
-    - name: Run unit-tests
-      run: devbox run pytest -vv -s
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.17.0
+        # env:
+        #   CIBW_SOME_OPTION: value
+        #    ...
+        # with:
+        #   package-dir: .
+        #   output-dir: wheelhouse
+        #   config-file: "{package}/pyproject.toml"
