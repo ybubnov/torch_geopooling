@@ -53,6 +53,10 @@ jobs:
 
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.17.0
+        env:
+          CIBW_BUILD: 'cp38-* cp39-*'
+          CIBW_SKIP: '*-musllinux_* *-manylinux_aarch64 *-manylinux_ppc64le *-manylinux_s390x'
+          CIBW_ARCH: 'all'
         # env:
         #   CIBW_SOME_OPTION: value
         #    ...
