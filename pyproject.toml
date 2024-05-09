@@ -57,6 +57,7 @@ test-command = "pytest {project}"
 
 [tool.cibuildwheel.macos]
 archs = ["arm64"]
+repair-wheel-command = ""
 
 [tool.cibuildwheel.linux]
 archs = ["aarch64", "x86_64"]
