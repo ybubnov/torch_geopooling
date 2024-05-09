@@ -31,10 +31,7 @@ classifiers = [
   "Operating System :: MacOS"
 ]
 
-dependencies = [
-  "torch >= 2.2.0, < 2.3.0; sys_platform == 'linux'",
-  "torch >= 2.2.0, < 2.3.0; sys_platform == 'darwin' or sys_platform == 'win'"
-]
+dependencies = ["torch >= 2.2.0, < 2.3.0"]
 
 
 [project.urls]
