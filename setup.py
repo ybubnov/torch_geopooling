@@ -27,21 +27,10 @@ class TorchParallelBackend(Enum):
 
 
 class BuildExtension(cpp_extension.BuildExtension):
-    def setup_openmp(self, extension):
-        compiler = self.compiler.compiler[0]
-        if compiler in ("clang", "apple-clang"):
-            self._add_compile_flag(extension, "-Xpreprocessor")
-            self._add_compile_flag(extension, "-fopenmp")
-        elif compiler == "gcc":
-            self._add_compile_flag(extension, "-fopenmp")
-        elif compiler == "intel-cc":
-            self._add_compile_flag(extension, "-Qopenmp")
-
     def build_extensions(self):
         parallel_backend = TorchParallelBackend.library_backend()
 
         for extension in self.extensions:
-            print("!!!", parallel_backend)
             if parallel_backend == TorchParallelBackend.OPENMP:
                 self._add_compile_flag(extension, "-DAT_PARALLEL_OPENMP")
                 self.setup_openmp(extension)
