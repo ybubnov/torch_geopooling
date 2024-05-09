@@ -18,6 +18,7 @@ class TorchParallelBackend(Enum):
     @classmethod
     def library_backend(cls) -> Optional[TorchParallelBackend]:
         info = parallel_info()
+        print(info)
         matches = re.findall(r"^ATen parallel backend: ([\ \w]+)$", info, flags=re.MULTILINE)
         if len(matches) == 0:
             return None
