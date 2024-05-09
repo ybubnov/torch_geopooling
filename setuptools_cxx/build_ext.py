@@ -1,29 +1,27 @@
 import os
-import tempfile
 import shutil
 import subprocess
-from pathlib import Path
-from collections import namedtuple
-from typing import List
-from io import StringIO
-
+import tempfile
 import tomllib
-from dotenv.main import DotEnv
+from io import StringIO
+from pathlib import Path
+from typing import List
+
+from conan.api.conan_api import ConanAPI
 from conan.api.model import Remote
 from conan.api.output import ConanOutput
-from conan.api.conan_api import ConanAPI
 from conan.cli.printers import print_profiles
+from conan.cli.printers.graph import print_graph_basic, print_graph_packages
+from conans.client.graph.graph import CONTEXT_HOST, RECIPE_CONSUMER, Node
+from conans.client.graph.graph_builder import DepsGraphBuilder
+from conans.client.graph.profile_node_definer import consumer_definer
 from conans.model.conan_file import ConanFile
 from conans.model.requires import Requirements
-from conans.client.graph.graph_builder import DepsGraphBuilder
-from conans.client.graph.graph import Node, RECIPE_CONSUMER, CONTEXT_HOST
-from conans.client.graph.profile_node_definer import consumer_definer
-from conan.cli.printers.graph import print_graph_packages, print_graph_basic
+from dotenv.main import DotEnv
 from setuptools import build_meta as build_meta
 
 
 class BuildExtBackend:
-
     def __init__(self, pyproject_path: Path = Path("pyproject.toml")) -> None:
         self.conan_api = ConanAPI()
 
@@ -43,8 +41,12 @@ class BuildExtBackend:
 
         for r in self.configuration.get("remotes", []):
             remote = Remote(
-                r["name"], r["url"], r["verify_ssl"],
-                r.get("disabled", False), r.get("allowed_packages"), r.get("remote_type")
+                r["name"],
+                r["url"],
+                r["verify_ssl"],
+                r.get("disabled", False),
+                r.get("allowed_packages"),
+                r.get("remote_type"),
             )
             remotes.append(remote)
         return remotes
@@ -81,17 +83,30 @@ class BuildExtBackend:
         conf_build = None
 
         profile_build = self.conan_api.profiles._get_profile(
-            build_profiles, settings_build, options_build,
-            conf_build, cwd, cache_settings,
-            profile_plugin, global_conf)
+            build_profiles,
+            settings_build,
+            options_build,
+            conf_build,
+            cwd,
+            cache_settings,
+            profile_plugin,
+            global_conf,
+        )
 
         settings_host = None
         options_host = None
         conf_host = None
 
         profile_host = self.conan_api.profiles._get_profile(
-            host_profiles, settings_host, options_host, conf_host,
-            cwd, cache_settings, profile_plugin, global_conf)
+            host_profiles,
+            settings_host,
+            options_host,
+            conf_host,
+            cwd,
+            cache_settings,
+            profile_plugin,
+            global_conf,
+        )
 
         self.profile_host = profile_host
         self.profile_build = profile_build
@@ -128,7 +143,10 @@ class BuildExtBackend:
     def source(self) -> None:
         process = subprocess.run(
             [f"source {self.output_folder}/conanbuild.sh && env"],
-            shell=True, check=True, env=os.environ, capture_output=True
+            shell=True,
+            check=True,
+            env=os.environ,
+            capture_output=True,
         )
         environ = DotEnv(None, stream=StringIO(process.stdout.decode("utf-8")), override=True)
         environ.set_as_environment_variables()

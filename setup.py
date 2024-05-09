@@ -26,7 +26,6 @@ class TorchParallelBackend(Enum):
 
 
 class BuildExtension(cpp_extension.BuildExtension):
-
     def setup_openmp(self, extension):
         compiler = self.compiler.compiler[0]
         if compiler in ("clang", "apple-clang"):
@@ -44,9 +43,9 @@ class BuildExtension(cpp_extension.BuildExtension):
             if parallel_backend is TorchParallelBackend.OPENMP:
                 self._add_compile_flag(extension, "-DAT_PARALLEL_OPENMP")
                 self.setup_openmp(extension)
-            elif torch_parallel_backend is TorchParallelBackend.NATIVE:
+            elif parallel_backend is TorchParallelBackend.NATIVE:
                 self._add_compile_flag(extension, "-DAT_PARALLEL_NATIVE")
-            elif torch_parallel_backend is TorchParallelBackend.NATIVE_TBB:
+            elif parallel_backend is TorchParallelBackend.NATIVE_TBB:
                 self._add_compile_flag(extension, "-DAT_PARALLEL_NATIVE_TBB")
 
         super().build_extensions()
