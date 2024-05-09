@@ -40,7 +40,7 @@ source = "https://github.com/ybubnov/torch_geopooling"
 
 
 [project.optional-dependencies]
-test = ["pytest >= 8.0.0"]
+test = ["pytest >= 8.0.0", "numpy >= 1.4.0"]
 
 
 [build-system]
