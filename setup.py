@@ -25,22 +25,31 @@ class TorchParallelBackend(Enum):
         return cls(matches.pop())
 
 
-def cpp_parallel_extension(*args, **kwargs):
-    backend = TorchParallelBackend.library_backend()
+class BuildExtension(cpp_extension.BuildExtension):
 
-    compile_args = []
-    if backend is TorchParallelBackend.OPENMP:
-        compile_args = ["-DAT_PARALLEL_OPENMP", "-fopenmp"]
-    elif backend is TorchParallelBackend.NATIVE:
-        compile_args = ["-DAT_PARALLEL_NATIVE"]
-    elif backend is TorchParallelBackend.NATIVE_TBB:
-        compile_args = ["-DAT_PARALLEL_NATIVE_TBB"]
+    def setup_openmp(self, extension):
+        compiler = self.compiler.compiler[0]
+        if compiler in ("clang", "apple-clang"):
+            self._add_compile_flag(extension, "-Xpreprocessor")
+            self._add_compile_flag(extension, "-fopenmp")
+        elif compiler == "gcc":
+            self._add_compile_flag(extension, "-fopenmp")
+        elif compiler == "intel-cc":
+            self._add_compile_flag(extension, "-Qopenmp")
 
-    extra_compile_args = kwargs.get("extra_compile_args", [])
-    extra_compile_args += compile_args
-    kwargs["extra_compile_args"] = extra_compile_args
+    def build_extensions(self):
+        parallel_backend = TorchParallelBackend.library_backend()
 
-    return cpp_extension.CppExtension(*args, **kwargs)
+        for extension in self.extensions:
+            if parallel_backend is TorchParallelBackend.OPENMP:
+                self._add_compile_flag(extension, "-DAT_PARALLEL_OPENMP")
+                self.setup_openmp(extension)
+            elif torch_parallel_backend is TorchParallelBackend.NATIVE:
+                self._add_compile_flag(extension, "-DAT_PARALLEL_NATIVE")
+            elif torch_parallel_backend is TorchParallelBackend.NATIVE_TBB:
+                self._add_compile_flag(extension, "-DAT_PARALLEL_NATIVE_TBB")
+
+        super().build_extensions()
 
 
 setup(
@@ -68,7 +77,7 @@ setup(
         "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
     ],
     ext_modules=[
-        cpp_parallel_extension(
+        cpp_extension.CppExtension(
             name="torch_geopooling._C",
             sources=[
                 "src/quadpool.cc",
@@ -80,7 +89,7 @@ setup(
             extra_compile_args=["-DFMT_HEADER_ONLY=1"],
         ),
     ],
-    cmdclass={"build_ext": cpp_extension.BuildExtension},
+    cmdclass={"build_ext": BuildExtension},
     tests_require=["pytest"],
     install_requires=["torch>=2.0.0"],
 )

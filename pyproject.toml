@@ -1,15 +1,50 @@
-[build-system]
-requires = [
-    "torch >= 2.0.0+cpu, < 3.0.0+cpu; sys_platform == 'linux'",
-    "torch >= 2.0.0, < 3.0.0; sys_platform == 'darwin' or sys_platform == 'win'",
-    "cibuildwheel == 2.17.0",
-    "numpy >= 1.4.0",
-    "pybind11 >= 2.0.0, < 3.0.0",
-    "pytest >= 8.0.0",
-    "setuptools ~= 69.5.1",
-    "sympy >= 1.12",
-    "typing-extensions >= 4.11.0",
-    "wheel >= 0.43.0"
+[options]
+dependency_links = [
+  "https://download.pytorch.org/whl"
 ]
 
-build-backend = "setuptools.build_meta"
+[build-system]
+build-backend = "setuptools_cxx.build_meta"
+backend-path = [".", "setuptoolx_cxx"]
+requires = [
+  "torch >= 2.0.0+cpu, < 3.0.0+cpu; sys_platform == 'linux'",
+  "torch >= 2.0.0, < 3.0.0; sys_platform == 'darwin' or sys_platform == 'win'",
+  "cibuildwheel >= 2.0.0",
+  "conan >= 2.0.0",
+  "ninja >= 1.0.0",
+  "numpy >= 1.4.0",
+  "pybind11 >= 2.0.0, < 3.0.0",
+  "python-dotenv >= 1.0.0",
+  "pytest >= 8.0.0",
+  "setuptools ~= 69.5.1",
+  "sympy >= 1.12",
+  "tomllib >= 0.7.0; python_version < '3.11'",
+  "typing-extensions >= 4.8.0",
+  "wheel >= 0.43.0"
+]
+
+
+[tool.conan]
+remotes = [
+  { name = "conancenter", url = "https://center.conan.io", verify_ssl = true }
+]
+
+tool_requires = ["cmake/3.22.6"]
+generators = ["AutotoolsDeps"]
+requires = ["llvm-openmp/17.0.6", "fmt/10.2.1"]
+
+
+# Configuration for Ruff linting and automatic formatting tool.
+# See more documentation for Ruff: https://docs.astral.sh/ruff/
+[tool.ruff]
+line-length = 100
+
+[tool.format]
+quote-style = "double"
+indent-style = "space"
+docstring-code-format = true
+
+
+[tool.cibuildwheel]
+build = "cp38-* cp39-*"
+skip = "*-musllinux_* *-manylinux_aarch64 *-manylinux_ppc64le *-manylinux_s390x"
