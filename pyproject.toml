@@ -1,7 +1,50 @@
-[options]
-dependency_links = [
-  "https://download.pytorch.org/whl"
+[project]
+name = "torch_geopooling"
+version = "1.0.0"
+license = {file = "LICENSE"}
+
+description = "The geospatial pooling modules for neural networks for PyTorch"
+authors = [
+  {name = "Yakau Bubnou", email = "girokompass@gmail.com"}
 ]
+
+readme = "README.md"
+requires-python = ">=3.9"
+
+# See https://pypi.python.org/pypi?%3Aaction=list_classifiers
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+  "Topic :: Scientific/Engineering",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Programming Language :: C++",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Operating System :: POSIX",
+  "Operating System :: Unix",
+  "Operating System :: MacOS"
+]
+
+dependencies = [
+  "torch >= 2.2.0, < 2.3.0; sys_platform == 'linux'",
+  "torch >= 2.2.0, < 2.3.0; sys_platform == 'darwin' or sys_platform == 'win'"
+]
+
+
+[project.urls]
+homepage = "https://github.com/ybubnov/torch_geopooling"
+source = "https://github.com/ybubnov/torch_geopooling"
+
+
+[project.optional-dependencies]
+test = ["pytest >= 8.0.0"]
+
 
 [build-system]
 build-backend = "setuptools_cxx.build_meta"
@@ -15,7 +58,6 @@ requires = [
   "numpy >= 1.4.0",
   "pybind11 >= 2.0.0, < 3.0.0",
   "python-dotenv >= 1.0.0",
-  "pytest >= 8.0.0",
   "setuptools ~= 69.5.1",
   "sympy >= 1.12",
   "toml >= 0.7.0; python_version < '3.11'",
@@ -26,7 +68,7 @@ requires = [
 
 [tool.conan]
 remotes = [
-  { name = "conancenter", url = "https://center.conan.io", verify_ssl = true }
+  {name = "conancenter", url = "https://center.conan.io", verify_ssl = true}
 ]
 
 tool_requires = ["cmake/3.22.6"]
