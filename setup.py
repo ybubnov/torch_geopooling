@@ -79,6 +79,6 @@ setup(
         ),
     ],
     cmdclass={"build_ext": BuildExtension},
-    tests_require=["pytest"],
+    tests_require=["pytest", "torch>=2.2.0,<2.3.0"],
     install_requires=["torch>=2.2.0,<2.3.0"],
 )

@@ -35,7 +35,7 @@ jobs:
         python-version: "${{ matrix.python-version }}"
 
     - name: Compile Python extension
-      run: pip install --verbose --editable .
+      run: pip install --verbose --editable '.[test]'
 
     - name: Run Python unit-tests
       run: pytest -vv -s
