@@ -46,7 +46,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-14-arm]
+        os: [macos-14]
 
     steps:
       - uses: actions/checkout@v4
@@ -55,10 +55,3 @@ jobs:
         uses: pypa/cibuildwheel@v2.17.0
         env:
           MACOSX_DEPLOYMENT_TARGET: '10.13'
-        # env:
-        #   CIBW_SOME_OPTION: value
-        #    ...
-        # with:
-        #   package-dir: .
-        #   output-dir: wheelhouse
-        #   config-file: "{package}/pyproject.toml"

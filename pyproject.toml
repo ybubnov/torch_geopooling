@@ -54,3 +54,6 @@ skip = "*-musllinux_* *-manylinux_aarch64 *-manylinux_ppc64le *-manylinux_s390x"
 
 test-requires = "pytest"
 test-command = "pytest {project}"
+
+[tool.cibuildwheel.macos]
+archs = ["arm64"]
