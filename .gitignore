@@ -33,3 +33,6 @@
 
 # Python cache
 *.pyc
+
+# Devbox lockfile
+devbox.lock
