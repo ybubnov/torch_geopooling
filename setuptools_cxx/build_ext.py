@@ -90,6 +90,8 @@ class BuildExtBackend:
         save(profile_pathname, contents)
 
     def initialize_profiles(self) -> None:
+        self.detect_profile()
+
         build_profiles = [self.conan_api.profiles.get_default_build()]
         host_profiles = [self.conan_api.profiles.get_default_host()]
 
@@ -179,7 +181,6 @@ class BuildExtBackend:
     @classmethod
     def prepare_build_environment(cls) -> None:
         self = cls()
-        self.detect_profile()
         self.install()
         self.source()
         self.cleanup()
