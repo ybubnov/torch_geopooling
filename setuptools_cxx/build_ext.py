@@ -9,7 +9,7 @@ from typing import List
 
 from conan.api.conan_api import ConanAPI
 from conan.api.model import Remote
-from conan.api.output import ConanOutput
+from conan.api.output import ConanOutput, cli_out_write
 from conan.cli.printers import print_profiles
 from conan.cli.printers.graph import print_graph_basic, print_graph_packages
 from conans.client.graph.graph import CONTEXT_HOST, RECIPE_CONSUMER, Node
@@ -17,6 +17,7 @@ from conans.client.graph.graph_builder import DepsGraphBuilder
 from conans.client.graph.profile_node_definer import consumer_definer
 from conans.model.conan_file import ConanFile
 from conans.model.requires import Requirements
+from conans.util.files import save
 from dotenv.main import DotEnv
 
 if sys.version_info >= (3, 11):
@@ -26,7 +27,12 @@ else:
 
 
 class BuildExtBackend:
-    def __init__(self, pyproject_path: Path = Path("pyproject.toml")) -> None:
+    def __init__(
+        self,
+        pyproject_path: Path = Path("pyproject.toml"),
+        profile_name: str = "default",
+    ) -> None:
+        self.profile_name = profile_name
         self.conan_api = ConanAPI()
 
         self.initialize_configuration(pyproject_path.read_text())
@@ -70,6 +76,18 @@ class BuildExtBackend:
         consumer_definer(conanfile, self.profile_host, self.profile_build)
 
         self.conanfile = conanfile
+
+    def detect_profile(self) -> None:
+        profile_pathname = self.conan_api.profiles.get_path(
+            self.profile_name, os.getcwd(), exists=False
+        )
+        detected_profile = self.conan_api.profiles.detect()
+
+        ConanOutput().success("\nDetected profile:")
+        cli_out_write(detected_profile.dumps())
+
+        contents = detected_profile.dumps()
+        save(profile_pathname, contents)
 
     def initialize_profiles(self) -> None:
         build_profiles = [self.conan_api.profiles.get_default_build()]
@@ -161,6 +179,7 @@ class BuildExtBackend:
     @classmethod
     def prepare_build_environment(cls) -> None:
         self = cls()
+        self.detect_profile()
         self.install()
         self.source()
         self.cleanup()
