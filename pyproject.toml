@@ -72,6 +72,9 @@ tool_requires = ["cmake/3.22.6"]
 generators = ["AutotoolsDeps"]
 requires = ["llvm-openmp/17.0.6", "fmt/10.2.1"]
 
+[tool.conan.settings]
+cppstd = "gnu17"
+
 
 # Configuration for Ruff linting and automatic formatting tool.
 # See more in documentation for Ruff: https://docs.astral.sh/ruff/
