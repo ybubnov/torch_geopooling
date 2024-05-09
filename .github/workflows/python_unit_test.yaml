@@ -22,7 +22,7 @@ jobs:
   unit-tests:
     strategy:
       matrix:
-        python-version: ['3.9'] #, '3.10', '3.11', '3.12']
+        python-version: ['3.9', '3.10', '3.11', '3.12']
     runs-on: ubuntu-latest
 
     steps:
@@ -39,18 +39,3 @@ jobs:
 
     - name: Run Python unit-tests
       run: pytest -vv -s
-
-  #build_wheels:
-  #  name: Build wheels on ${{ matrix.os }}
-  #  runs-on: ${{ matrix.os }}
-  #  strategy:
-  #    matrix:
-  #      os: [macos-14]
-
-  #  steps:
-  #    - uses: actions/checkout@v4
-
-  #    - name: Build wheels
-  #      uses: pypa/cibuildwheel@v2.17.0
-  #      env:
-  #        MACOSX_DEPLOYMENT_TARGET: '11.0'
