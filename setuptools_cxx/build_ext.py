@@ -132,6 +132,9 @@ class BuildExtBackend:
             global_conf,
         )
 
+        if profile_host.settings["os"] == "Macos":
+            profile_host.settings["arch"] = "armv8"
+
         self.profile_host = profile_host
         self.profile_build = profile_build
 
