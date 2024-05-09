@@ -46,7 +46,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-14]
+        os: [macos-14-arm]
 
     steps:
       - uses: actions/checkout@v4
@@ -54,7 +54,6 @@ jobs:
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.17.0
         env:
-          CIBW_ARCH: 'all'
           MACOSX_DEPLOYMENT_TARGET: '10.13'
         # env:
         #   CIBW_SOME_OPTION: value
