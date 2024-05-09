@@ -41,12 +41,13 @@ class BuildExtension(cpp_extension.BuildExtension):
         parallel_backend = TorchParallelBackend.library_backend()
 
         for extension in self.extensions:
-            if parallel_backend is TorchParallelBackend.OPENMP:
+            print("!!!", parallel_backend)
+            if parallel_backend == TorchParallelBackend.OPENMP:
                 self._add_compile_flag(extension, "-DAT_PARALLEL_OPENMP")
                 self.setup_openmp(extension)
-            elif parallel_backend is TorchParallelBackend.NATIVE:
+            elif parallel_backend == TorchParallelBackend.NATIVE:
                 self._add_compile_flag(extension, "-DAT_PARALLEL_NATIVE")
-            elif parallel_backend is TorchParallelBackend.NATIVE_TBB:
+            elif parallel_backend == TorchParallelBackend.NATIVE_TBB:
                 self._add_compile_flag(extension, "-DAT_PARALLEL_NATIVE_TBB")
 
         super().build_extensions()
