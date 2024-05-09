@@ -1,8 +1,8 @@
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
-import tomllib
 from io import StringIO
 from pathlib import Path
 from typing import List
@@ -18,7 +18,11 @@ from conans.client.graph.profile_node_definer import consumer_definer
 from conans.model.conan_file import ConanFile
 from conans.model.requires import Requirements
 from dotenv.main import DotEnv
-from setuptools import build_meta as build_meta
+
+if sys.version_info >= (3, 11):
+    import tomllib
+else:
+    import toml as tomllib
 
 
 class BuildExtBackend:

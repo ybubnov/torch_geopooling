@@ -5,7 +5,7 @@ dependency_links = [
 
 [build-system]
 build-backend = "setuptools_cxx.build_meta"
-backend-path = [".", "setuptoolx_cxx"]
+backend-path = [".", "setuptools_cxx"]
 requires = [
   "torch >= 2.0.0+cpu, < 3.0.0+cpu; sys_platform == 'linux'",
   "torch >= 2.0.0, < 3.0.0; sys_platform == 'darwin' or sys_platform == 'win'",
@@ -18,7 +18,7 @@ requires = [
   "pytest >= 8.0.0",
   "setuptools ~= 69.5.1",
   "sympy >= 1.12",
-  "tomllib >= 0.7.0; python_version < '3.11'",
+  "toml >= 0.7.0; python_version < '3.11'",
   "typing-extensions >= 4.8.0",
   "wheel >= 0.43.0"
 ]
@@ -35,7 +35,7 @@ requires = ["llvm-openmp/17.0.6", "fmt/10.2.1"]
 
 
 # Configuration for Ruff linting and automatic formatting tool.
-# See more documentation for Ruff: https://docs.astral.sh/ruff/
+# See more in documentation for Ruff: https://docs.astral.sh/ruff/
 [tool.ruff]
 line-length = 100
 
@@ -45,6 +45,12 @@ indent-style = "space"
 docstring-code-format = true
 
 
+# Configuration to build wheels for different version of python, operating systems and
+# architectures. See more in documentation: https://cibuildwheel.pypa.io/en/stable/options/
 [tool.cibuildwheel]
 build = "cp38-* cp39-*"
+build-verbosity = 3
 skip = "*-musllinux_* *-manylinux_aarch64 *-manylinux_ppc64le *-manylinux_s390x"
+
+test-requires = "pytest"
+test-command = "pytest {project}"
