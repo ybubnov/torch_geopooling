@@ -1,3 +1,18 @@
+# Copyright (C) 2024, Yakau Bubnou
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 import os
 import platform
 import shutil
@@ -28,6 +43,31 @@ else:
 
 
 class BuildExtBackend:
+    """Build extension for setting up CXX environment using conan.
+
+    This class compiles binaries specified in `[tool.conan]` section of `pyproject.toml`
+    file, and provides instruments to add appropriate linker and compiler flags to make
+    those libraries available as CXX dependencies.
+
+    Essentially, this class resembles the following conan commands:
+        1. conan profile detect
+        2. conan install conanfile.txt --build=missing --output-folder=/tmp/env
+        3. source /tmp/env/conanbuild.sh
+
+    This tool is required, essentially, to include environmental variables exported within
+    `conanbuild.sh` script into the current process' environment. Another nice, but not
+    important features is that dependencies can be declared directly in `pyproject.toml`.
+
+    Args:
+        pyproject_path: Path to the `pyproject.toml` file. Default: "pyproject.toml" in the
+            current working directory.
+        profile_name: Name of the Conan profile used to compile C++ dependencies.
+
+    Examples:
+
+        >>> BuildExtBackend.prepare_build_environment()
+    """
+
     def __init__(
         self,
         pyproject_path: Path = Path("pyproject.toml"),
@@ -97,7 +137,7 @@ class BuildExtBackend:
         host_profiles = [self.conan_api.profiles.get_default_host()]
 
         global_conf = self.conan_api.config.global_conf
-        global_conf.validate()  # TODO: Remove this from here
+        global_conf.validate()
 
         cache_settings = self.conan_api.config.settings_yml
         profile_plugin = self.conan_api.profiles._load_profile_plugin()
@@ -188,6 +228,10 @@ class BuildExtBackend:
 
     @classmethod
     def prepare_build_environment(cls) -> None:
+        """Prepare build environment for compilation of CXX extension.
+
+        This method changes some environment variables (like LDFLAGS, CXXFLAGS, LIBS, etc.).
+        """
         self = cls()
         self.install()
         self.source()
