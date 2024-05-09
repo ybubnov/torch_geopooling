@@ -1,4 +1,5 @@
 import os
+import platform
 import shutil
 import subprocess
 import sys
@@ -168,8 +169,12 @@ class BuildExtBackend:
         ConanOutput().success("Install finished successfully")
 
     def source(self) -> None:
+        source_command = "source"
+        if platform.system() == "Linux":
+            source_command = "."
+
         process = subprocess.run(
-            [f"source {self.output_folder}/conanbuild.sh && env"],
+            [f"{source_command} {self.output_folder}/conanbuild.sh && env"],
             shell=True,
             check=True,
             env=os.environ,
