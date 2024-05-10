@@ -68,7 +68,7 @@ remotes = [
   {name = "conancenter", url = "https://center.conan.io", verify_ssl = true}
 ]
 
-tool_requires = ["cmake/3.22.6"]
+tool_requires = ["cmake/[>=3.20 <4]"]
 generators = ["AutotoolsDeps"]
 requires = ["llvm-openmp/17.0.6", "fmt/10.2.1"]
 
