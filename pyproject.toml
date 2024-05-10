@@ -47,9 +47,8 @@ test = ["pytest >= 8.0.0", "numpy >= 1.4.0"]
 build-backend = "setuptools_cxx.build_meta"
 backend-path = [".", "setuptools_cxx"]
 requires = [
-  "torch >= 2.2.0+cpu, < 2.3.0+cpu; sys_platform == 'linux'",
-  "torch >= 2.2.0, < 2.3.0; sys_platform == 'darwin' or sys_platform == 'win'",
   "cibuildwheel >= 2.0.0",
+  "deepmerge >= 1.1.1",
   "conan >= 2.0.0",
   "ninja >= 1.0.0",
   "numpy >= 1.4.0",
@@ -58,6 +57,8 @@ requires = [
   "setuptools ~= 69.5.1",
   "sympy >= 1.12",
   "toml >= 0.7.0; python_version < '3.11'",
+  "torch >= 2.2.0+cpu, < 2.3.0+cpu; sys_platform == 'linux'",
+  "torch >= 2.2.0, < 2.3.0; sys_platform == 'darwin' or sys_platform == 'win'",
   "typing-extensions >= 4.8.0",
   "wheel >= 0.43.0"
 ]
@@ -73,7 +74,7 @@ generators = ["AutotoolsDeps"]
 requires = ["llvm-openmp/17.0.6", "fmt/10.2.1"]
 
 [tool.conan.settings]
-cppstd = "gnu17"
+compiler = {cppstd = "gnu17"}
 
 
 # Configuration for Ruff linting and automatic formatting tool.

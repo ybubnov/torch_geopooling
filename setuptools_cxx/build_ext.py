@@ -34,6 +34,7 @@ from conans.client.graph.profile_node_definer import consumer_definer
 from conans.model.conan_file import ConanFile
 from conans.model.requires import Requirements
 from conans.util.files import save
+from deepmerge import always_merger
 from dotenv.main import DotEnv
 
 if sys.version_info >= (3, 11):
@@ -177,8 +178,8 @@ class BuildExtBackend:
             profile_host.settings["arch"] = "armv8"
 
         settings = self.configuration.get("settings", {})
-        profile_host.settings.update(settings)
-        profile_build.settings.update(settings)
+        profile_host.settings = always_merger.merge(profile_host.settings, settings)
+        profile_build.settings = always_merger.merge(profile_build.settings, settings)
 
         self.profile_host = profile_host
         self.profile_build = profile_build
