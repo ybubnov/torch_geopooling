@@ -97,10 +97,13 @@ docstring-code-format = true
 build = "cp39-*"
 build-verbosity = 3
 skip = "*-musllinux_*"
+repair-wheel-command = ""
+
+# Try to find necessary dependencies (primarily torch) from torch index at first.
+environment = {PIP_INDEX_URL = "https://download.pytorch.org/whl/cpu"}
 
 [tool.cibuildwheel.macos]
 archs = ["arm64"]
-repair-wheel-command = ""
 
 [tool.cibuildwheel.linux]
 archs = ["aarch64", "x86_64"]

@@ -19,5 +19,3 @@ jobs:
 
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.17.0
-        env:
-          PIP_CONFIG_FILE: ${{ github.workspace }}/pip.conf
