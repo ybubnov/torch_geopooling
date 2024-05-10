@@ -108,6 +108,7 @@ class BuildExtBackend:
 
     def initialize_conanfile(self) -> None:
         conanfile = ConanFile("torch_geopooling")
+        conanfile.build_policy = "missing"
 
         conanfile.requires = Requirements(
             declared=self.configuration.get("requires"),

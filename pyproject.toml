@@ -43,6 +43,10 @@ source = "https://github.com/ybubnov/torch_geopooling"
 test = ["pytest >= 8.0.0", "numpy >= 1.4.0"]
 
 
+[tool.setuptools.packages.find]
+include = ["torch_geopooling*"]
+
+
 [build-system]
 build-backend = "setuptools_cxx.build_meta"
 backend-path = [".", "setuptools_cxx"]
