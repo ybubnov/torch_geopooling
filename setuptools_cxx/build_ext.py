@@ -193,10 +193,13 @@ class BuildExtBackend:
 
     def install(self) -> None:
         print_profiles(self.profile_host, self.profile_build)
-
+        ConanOutput("-" * 80)
         graph = self.make_dependency_graph()
+        ConanOutput("-" * 80)
         print_graph_packages(graph)
+        ConanOutput("-" * 80)
         print_graph_basic(graph)
+        ConanOutput("-" * 80)
 
         graph.report_graph_error()
         self.conan_api.graph.analyze_binaries(graph, remotes=self.remotes, build_mode=["missing"])
