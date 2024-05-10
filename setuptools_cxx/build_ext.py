@@ -174,9 +174,6 @@ class BuildExtBackend:
             global_conf,
         )
 
-        if profile_host.settings["os"] == "Macos":
-            profile_host.settings["arch"] = "armv8"
-
         settings = self.configuration.get("settings", {})
         profile_host.settings.update(settings)
         profile_build.settings.update(settings)
@@ -198,6 +195,7 @@ class BuildExtBackend:
         print_profiles(self.profile_host, self.profile_build)
 
         graph = self.make_dependency_graph()
+        print_graph_packages(graph)
         print_graph_basic(graph)
 
         graph.report_graph_error()
