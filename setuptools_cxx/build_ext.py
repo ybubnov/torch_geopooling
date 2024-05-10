@@ -125,6 +125,9 @@ class BuildExtBackend:
         )
         detected_profile = self.conan_api.profiles.detect()
 
+        settings = self.configuration.get("settings", {})
+        detected_profile.settings.update(**settings)
+
         ConanOutput().success("\nDetected profile:")
         cli_out_write(detected_profile.dumps())
 
@@ -174,10 +177,6 @@ class BuildExtBackend:
             global_conf,
         )
 
-        settings = self.configuration.get("settings", {})
-        profile_host.settings.update(settings)
-        profile_build.settings.update(settings)
-
         self.profile_host = profile_host
         self.profile_build = profile_build
 
@@ -193,13 +192,9 @@ class BuildExtBackend:
 
     def install(self) -> None:
         print_profiles(self.profile_host, self.profile_build)
-        ConanOutput().success("-" * 80)
+
         graph = self.make_dependency_graph()
-        ConanOutput().success("-" * 80)
-        print_graph_packages(graph)
-        ConanOutput().success("-" * 80)
         print_graph_basic(graph)
-        ConanOutput().success("-" * 80)
 
         graph.report_graph_error()
         self.conan_api.graph.analyze_binaries(graph, remotes=self.remotes, build_mode=["missing"])
