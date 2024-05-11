@@ -1,3 +1,18 @@
+/// Copyright (C) 2024, Yakau Bubnou
+///
+/// This program is free software: you can redistribute it and/or modify
+/// it under the terms of the GNU General Public License as published by
+/// the Free Software Foundation, either version 3 of the License, or
+/// (at your option) any later version.
+///
+/// This program is distributed in the hope that it will be useful,
+/// but WITHOUT ANY WARRANTY; without even the implied warranty of
+/// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+/// GNU General Public License for more details.
+///
+/// You should have received a copy of the GNU General Public License
+/// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 #include <torch_geopooling/exception.h>
 #include <torch_geopooling/tile.h>
 
@@ -65,6 +80,20 @@ Tile::child(std::size_t x, std::size_t y) const
 }
 
 
+std::vector<Tile>
+Tile::children() const
+{
+    std::vector<Tile> tiles;
+
+    for (std::size_t x : {0, 1}) {
+        for (std::size_t y : {0, 1}) {
+            tiles.push_back(child(x, y));
+        }
+    }
+    return tiles;
+}
+
+
 bool
 Tile::operator==(const Tile& rhs) const
 {
@@ -76,6 +105,19 @@ bool
 Tile::operator!=(const Tile& rhs) const
 {
     return !(*this == rhs);
+}
+
+
+bool
+Tile::operator<(const Tile& rhs) const
+{
+    if (m_z != rhs.m_z) {
+        return m_z < rhs.m_z;
+    }
+    if (m_x != rhs.m_x) {
+        return m_x < rhs.m_x;
+    }
+    return m_y < rhs.m_y;
 }
 
 

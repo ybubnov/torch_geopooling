@@ -231,11 +231,11 @@ public:
     /// and iterates over all terminal nodes of the parent. When node does not belong to a
     /// terminal node, method returns `end()`, or empty iterator.
     ///
-    /// @param point a 2-dimensional point.
-    /// @param max_depth a maximum depth of the look operation. When specified, the point lookup
+    /// \param point a 2-dimensional point.
+    /// \param max_depth a maximum depth of the look operation. When specified, the point lookup
     ///     process is limited by the specified depth.
     ///
-    /// @returns The iterator over a group of terminal nodes.
+    /// \return The iterator over a group of terminal nodes.
     iterator
     find_terminal_group(
         const key_type& point,
@@ -520,10 +520,8 @@ private:
         m_queue.pop();
 
         if (m_set->has_children(tile)) {
-            for (std::size_t x : {0, 1}) {
-                for (std::size_t y : {0, 1}) {
-                    m_queue.push(tile.child(x, y));
-                }
+            for (auto child_tile : tile.children()) {
+                m_queue.push(child_tile);
             }
         }
         return *this;
