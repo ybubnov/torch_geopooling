@@ -28,4 +28,8 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
+          # Use a generated name, since upload-artifacts cannot upload files as is,
+          # and running jobs in matrix result in a artifact name clash.
+          name: python-wheels-${{ matrix.os }}
           path: wheelhouse/*.whl
+          retention-days: 7
