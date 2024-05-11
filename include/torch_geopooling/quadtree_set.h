@@ -33,8 +33,6 @@ public:
     : m_tile(tile), m_exterior(exterior), m_points()
     { }
 
-    ~quadtree_node() = default;
-
     const Tile&
     tile() const
     { return m_tile; }
@@ -100,6 +98,7 @@ public:
     )
     : m_nodes(),
       m_options(options.value_or(quadtree_options())),
+      m_exterior(exterior),
       m_total_depth(0),
       m_num_terminal_nodes(1)
     {
@@ -119,7 +118,7 @@ public:
     {
         while (first != last) {
             Tile node_tile(*first);
-            auto node_exterior = make_exterior(exterior, node_tile);
+            auto node_exterior = exterior.slice(node_tile);
             auto node = node_type(node_tile, node_exterior);
 
             m_nodes.insert(std::make_pair(node_tile, node));
@@ -156,8 +155,6 @@ public:
     )
     : quadtree_set(exterior_type(xywh), options)
     { }
-
-    ~quadtree_set() = default;
 
     iterator
     begin()
@@ -334,6 +331,7 @@ private:
 
     container_type m_nodes;
     quadtree_options m_options;
+    exterior_type m_exterior;
 
     std::size_t m_total_depth;
 
@@ -350,14 +348,6 @@ private:
                 point.first, point.second
             );
         }
-    }
-
-    exterior_type
-    make_exterior(const exterior_type exterior, const Tile& tile) const
-    {
-        auto width = exterior.width() / tile.z();
-        auto height = exterior.height() / tile.z();
-        return exterior_type(tile.x() * width, tile.y() * height, width, height);
     }
 
     bool
@@ -390,16 +380,12 @@ private:
             return;
         }
 
-        auto exteriors = node.exterior().symmetric_split();
-        for (std::size_t x : {0, 1}) {
-            for (std::size_t y : {0, 1}) {
-                auto tile = node.tile().child(x, y);
-                auto n = node_type(tile, exteriors.at(x, y));
+        for (auto child_tile : node.tile().children()) {
+            auto n = node_type(child_tile, m_exterior.slice(child_tile));
 
-                m_nodes.insert(std::make_pair(tile, n));
-                m_total_depth = std::max(tile.z(), m_total_depth);
-                m_num_terminal_nodes += 1;
-            }
+            m_nodes.insert(std::make_pair(child_tile, n));
+            m_total_depth = std::max(child_tile.z(), m_total_depth);
+            m_num_terminal_nodes += 1;
         }
 
         // Current node is no longer terminal, therefore subtract -1 here.
@@ -452,9 +438,6 @@ public:
     : m_queue(),
       m_set(nullptr),
       m_include_internal(false)
-    { }
-
-    ~quadtree_set_iterator()
     { }
 
     // TODO: remember the size of a quadtree and throw exception, if size of the underlying
