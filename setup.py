@@ -42,8 +42,6 @@ class BuildExtension(cpp_extension.BuildExtension):
 
 
 setup(
-    package_dir={"torch_geopooling": "torch_geopooling"},
-    packages=["torch_geopooling"],
     ext_modules=[
         cpp_extension.CppExtension(
             name="torch_geopooling._C",

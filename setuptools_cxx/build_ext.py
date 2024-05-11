@@ -108,6 +108,7 @@ class BuildExtBackend:
 
     def initialize_conanfile(self) -> None:
         conanfile = ConanFile("torch_geopooling")
+        conanfile.build_policy = "missing"
 
         conanfile.requires = Requirements(
             declared=self.configuration.get("requires"),
@@ -123,6 +124,9 @@ class BuildExtBackend:
             self.profile_name, os.getcwd(), exists=False
         )
         detected_profile = self.conan_api.profiles.detect()
+
+        settings = self.configuration.get("settings", {})
+        detected_profile.settings.update(**settings)
 
         ConanOutput().success("\nDetected profile:")
         cli_out_write(detected_profile.dumps())
@@ -172,9 +176,6 @@ class BuildExtBackend:
             profile_plugin,
             global_conf,
         )
-
-        if profile_host.settings["os"] == "Macos":
-            profile_host.settings["arch"] = "armv8"
 
         self.profile_host = profile_host
         self.profile_build = profile_build

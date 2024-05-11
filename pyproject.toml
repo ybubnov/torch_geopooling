@@ -1,6 +1,6 @@
 [project]
 name = "torch_geopooling"
-version = "1.0.0"
+version = "1.0.0rc1"
 license = {file = "LICENSE"}
 
 description = "The geospatial pooling modules for neural networks for PyTorch"
@@ -43,12 +43,14 @@ source = "https://github.com/ybubnov/torch_geopooling"
 test = ["pytest >= 8.0.0", "numpy >= 1.4.0"]
 
 
+[tool.setuptools.packages.find]
+include = ["torch_geopooling*"]
+
+
 [build-system]
 build-backend = "setuptools_cxx.build_meta"
 backend-path = [".", "setuptools_cxx"]
 requires = [
-  "torch >= 2.2.0+cpu, < 2.3.0+cpu; sys_platform == 'linux'",
-  "torch >= 2.2.0, < 2.3.0; sys_platform == 'darwin' or sys_platform == 'win'",
   "cibuildwheel >= 2.0.0",
   "conan >= 2.0.0",
   "ninja >= 1.0.0",
@@ -58,6 +60,8 @@ requires = [
   "setuptools ~= 69.5.1",
   "sympy >= 1.12",
   "toml >= 0.7.0; python_version < '3.11'",
+  "torch >= 2.2.0+cpu, < 2.3.0+cpu; sys_platform == 'linux'",
+  "torch >= 2.2.0, < 2.3.0; sys_platform == 'darwin' or sys_platform == 'win'",
   "typing-extensions >= 4.8.0",
   "wheel >= 0.43.0"
 ]
@@ -68,9 +72,12 @@ remotes = [
   {name = "conancenter", url = "https://center.conan.io", verify_ssl = true}
 ]
 
-tool_requires = ["cmake/3.22.6"]
+tool_requires = ["cmake/[>=3.20 <4]"]
 generators = ["AutotoolsDeps"]
 requires = ["llvm-openmp/17.0.6", "fmt/10.2.1"]
+
+[tool.conan.settings]
+"compiler.cppstd" = "gnu17"
 
 
 # Configuration for Ruff linting and automatic formatting tool.
@@ -89,11 +96,19 @@ docstring-code-format = true
 [tool.cibuildwheel]
 build = "cp39-*"
 build-verbosity = 3
-skip = "*-musllinux_* *-manylinux_aarch64 *-manylinux_ppc64le *-manylinux_s390x"
+skip = "*-musllinux_*"
+repair-wheel-command = ""
+
+# Try to find necessary dependencies (primarily torch) from torch index at first,
+# and only then access Python's index for the remaining dependencies.
+[tool.cibuildwheel.environment]
+PIP_INDEX_URL = "https://download.pytorch.org/whl/cpu"
+PIP_EXTRA_INDEX_URL = "https://pypi.python.org/simple"
 
 [tool.cibuildwheel.macos]
 archs = ["arm64"]
-repair-wheel-command = ""
 
 [tool.cibuildwheel.linux]
 archs = ["aarch64", "x86_64"]
+manylinux-x86_64-image = "manylinux2014"
+manylinux-aarch64-image = "manylinux2014"
