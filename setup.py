@@ -47,7 +47,6 @@ setup(
             name="torch_geopooling._C",
             sources=[
                 "src/quadpool.cc",
-                "src/quadtree.cc",
                 "src/tile.cc",
                 "torch_geopooling/__bind__/python_module.cc",
             ],

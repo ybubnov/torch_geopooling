@@ -1,7 +1,25 @@
+/// Copyright (C) 2024, Yakau Bubnou
+///
+/// This program is free software: you can redistribute it and/or modify
+/// it under the terms of the GNU General Public License as published by
+/// the Free Software Foundation, either version 3 of the License, or
+/// (at your option) any later version.
+///
+/// This program is distributed in the hope that it will be useful,
+/// but WITHOUT ANY WARRANTY; without even the implied warranty of
+/// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+/// GNU General Public License for more details.
+///
+/// You should have received a copy of the GNU General Public License
+/// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+
 #include <array>
+#include <functional>
 #include <iterator>
 #include <unordered_map>
 #include <vector>
+#include <queue>
 
 #include <ATen/Functions.h>
 #include <ATen/Parallel.h>
@@ -97,7 +115,7 @@ private:
 
 /// Structure represents a quadtree operation.
 ///
-/// On object creation, it creates a tile index for fast access to the weights and biases.
+/// On instance creation, it creates a tile index for fast access to the weights and biases.
 /// Additionally, it checks validity of input data (tiles, indices, weight, bias, etc.), to
 /// ensure it can be used to compute the operation.
 template<typename Coordinate = double, typename Index = int32_t>
@@ -315,21 +333,104 @@ linear_quad_pool2d(
 
     quadtree_op op("linear_quad_pool2d", tiles, input, exterior, options, training);
 
-    std::vector<int32_t> indices;
+    const int64_t grain_size = at::internal::GRAIN_SIZE;
+    const int64_t total_size = input.size(0);
+
+    std::vector<int32_t> indices(total_size);
+    auto input_it = op.make_input_iterator(input);
 
     // This loop might raise an exception, when the tile returned by `set.find` operation
     // returns non-terminal node. This should not happen in practice.
-    for (const auto& point : op.make_input_iterator(input)) {
-        const auto& node = op.m_set.find(point);
-        const auto& index = op.m_tile_index.at(node.tile());
-        indices.push_back(index);
-    }
+
+    at::parallel_for(0, total_size, grain_size, [&](int64_t begin, int64_t end) {
+        for (const auto i : c10::irange(begin, end)) {
+            const auto& point = input_it[i];
+            const auto& node = op.m_set.find(point);
+            indices[i] = op.m_tile_index.at(node.tile());
+        }
+    });
 
     torch::Tensor tiles_out = op.forward_tiles(tiles);
     auto [weight_out, bias_out] = op.forward(indices, weight, bias);
 
     return std::make_tuple(tiles_out, weight_out, bias_out);
 }
+
+
+/// Structure represents a aggregation (statistic) quadtree operation.
+///
+/// On instance create, it creates a statistic index for fast access by a tile.
+template<typename Coordinate = double, typename Index = int32_t>
+struct quadtree_stat_op : public quadtree_op<Coordinate, Index>
+{
+    using base = quadtree_op<Coordinate, Index>;
+
+    using stat_quadtree_index = std::unordered_map<Tile, torch::Tensor>;
+
+    using stat_function = std::function<torch::Tensor(const torch::Tensor&)>;
+
+    /// Stat tile index is comprised of both terminal and intermediate nodes.
+    stat_quadtree_index m_stat_tile_index;
+    stat_function m_stat_function;
+
+    quadtree_stat_op(
+        std::string op,
+        stat_function stat_function,
+        typename base::tensor_reference tiles,
+        typename base::tensor_reference input,
+        typename base::tensor_reference weight,
+        const typename base::quadtree_exterior& exterior,
+        const quadtree_options& options,
+        bool training
+    )
+    : quadtree_op<Coordinate, Index>(op, tiles, input, exterior, options, training),
+      m_stat_function(stat_function),
+      m_stat_tile_index()
+    {
+        std::priority_queue<Tile, std::vector<Tile>, std::less<Tile>> unvisited;
+
+        // Iterate over terminal nodes of the quadtree index and calculate an associated
+        // weight. Since this is a terminal node, then statistic will be the value from the
+        // weight tensor itself.
+        for (auto item : base::m_tile_index) {
+            auto tile = item.first;
+            auto index = std::vector<Index>({item.second});
+
+            auto stat = base::forward_weight(index, weight);
+            m_stat_tile_index.insert(std::make_pair(tile, stat));
+            unvisited.push(tile.parent());
+        }
+
+        while (!unvisited.empty()) {
+            auto tile = unvisited.top();
+            unvisited.pop();
+
+            // If the tile is missing from the statistics map, then compute a statistic
+            // for the all it's children and insert a new record into the map.
+            //
+            // Since we are using a queue, we can be sure that we iterate layer over layer
+            // of the quadtree, so all children should be presented in a stat tile index.
+            if (auto it = m_stat_tile_index.find(tile); it != m_stat_tile_index.end()) {
+                continue;
+            }
+
+            /// Query values from children, put them into a tensor and compute a statistic
+            /// using a specified function.
+            std::vector<torch::Tensor> child_weights;
+            for (auto child_tile : tile.children()) {
+                child_weights.push_back(m_stat_tile_index.at(child_tile));
+            }
+
+            auto stat = m_stat_function(torch::stack(child_weights));
+            m_stat_tile_index.insert(std::make_pair(tile, stat));
+
+            // Do not compute the root tile multiple times, once is enough.
+            if (tile != Tile::root) {
+                unvisited.push(tile.parent());
+            }
+        }
+    }
+};
 
 
 std::tuple<torch::Tensor, torch::Tensor>
@@ -350,13 +451,18 @@ max_quad_pool2d(
         .precision(precision)
         .capacity(capacity);
 
-    quadtree_op op("max_quad_pool2d", tiles, input, exterior, options, training);
+    auto max_fn = [](const torch::Tensor& t) -> torch::Tensor {
+        return at::unsqueeze(at::max(t), 0);
+    };
+
+    quadtree_stat_op op(
+        "max_quad_pool2d", max_fn, tiles, input, weight, exterior, options, training
+    );
 
     const int64_t grain_size = at::internal::GRAIN_SIZE;
     const int64_t total_size = input.size(0);
 
     std::vector<torch::Tensor> weight_out_vec(total_size);
-
     auto input_it = op.make_input_iterator(input);
 
     at::parallel_for(0, total_size, grain_size, [&](int64_t begin, int64_t end) {
@@ -364,28 +470,15 @@ max_quad_pool2d(
             std::vector<int32_t> indices;
             const auto& point = input_it[i];
 
-            std::transform(
-                op.m_set.find_terminal_group(point),
-                op.m_set.end(),
-                std::back_insert_iterator(indices),
-                [&](auto node) -> int32_t {
-                    return op.m_tile_index.at(node.tile());
-                }
-            );
+            auto node = op.m_set.find(point);
+            auto stat = op.m_stat_tile_index.at(node.tile().parent());
 
-            if (indices.size() == 0) {
-                throw value_error(
-                    "max_quad_pool2d: point {} cannot be mapped to terminal nodes", point
-                );
-            }
-
-            auto tg = op.m_set.find_terminal_group(point);
-            weight_out_vec[i] = op.forward_weight(indices, weight).max();
+            weight_out_vec[i] = stat;
         }
     });
 
     torch::Tensor tiles_out = op.forward_tiles(tiles);
-    torch::Tensor weight_out = torch::stack(weight_out_vec);
+    torch::Tensor weight_out = at::squeeze(torch::stack(weight_out_vec), 1);
 
     return std::make_tuple(tiles_out, weight_out);
 }

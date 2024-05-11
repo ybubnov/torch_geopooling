@@ -60,7 +60,7 @@ class LinearQuadPool2d(_QuadPool):
 
     This module constructs an internal lookup quadtree to organize closely situated 2D points.
     Each terminal node in the resulting quadtree is paired with a weight and bias. Thus, when
-    providing an input coordinate, the module retrieves the corresponding termina node and
+    providing an input coordinate, the module retrieves the corresponding terminal node and
     returns its associated weight and bias. Then module applies a linear transformation to each
     input coordinate.
 
