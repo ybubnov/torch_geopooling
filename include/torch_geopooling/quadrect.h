@@ -5,6 +5,7 @@
 #include <initializer_list>
 
 #include <torch_geopooling/exception.h>
+#include <torch_geopooling/tile.h>
 
 
 namespace torch_geopooling {
@@ -143,8 +144,8 @@ public:
     quad<quadrect>
     symmetric_split() const
     {
-        auto w = width() / 2;
-        auto h = height() / 2;
+        value_type w = width() / 2;
+        value_type h = height() / 2;
 
         return quad<quadrect>(
             {m_xmin, m_ymin, w, h},
@@ -152,6 +153,16 @@ public:
             {m_xmin + w, m_ymin, w, h},
             {m_xmin + w, m_ymin + h, w, h}
         );
+    }
+
+    quadrect
+    slice(const Tile& tile) const
+    {
+        value_type w = width() / (1 << tile.z());
+        value_type h = height() / (1 << tile.z());
+
+        auto result = quadrect(m_xmin + tile.x() * w, m_ymin + tile.y() * h, w, h);
+        return result;
     }
 
     friend std::ostream&
