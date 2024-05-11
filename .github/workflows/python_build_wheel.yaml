@@ -2,9 +2,9 @@ name: Python Build Wheel
 
 on:
   push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+    tags:
+      - v*
+  workflow_dispatch:
 
 jobs:
   build_wheels:
@@ -12,7 +12,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-latest, macos-14]
 
     steps:
       - uses: actions/checkout@v4
@@ -25,3 +25,7 @@ jobs:
 
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.17.0
+
+      - uses: actions/upload-artifact@v4
+        with:
+          path: wheelhouse/*.whl

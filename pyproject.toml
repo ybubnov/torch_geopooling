@@ -1,6 +1,6 @@
 [project]
 name = "torch_geopooling"
-version = "1.0.0"
+version = "1.0.0rc1"
 license = {file = "LICENSE"}
 
 description = "The geospatial pooling modules for neural networks for PyTorch"
@@ -109,6 +109,6 @@ PIP_EXTRA_INDEX_URL = "https://pypi.python.org/simple"
 archs = ["arm64"]
 
 [tool.cibuildwheel.linux]
-archs = ["aarch64"]
+archs = ["aarch64", "x86_64"]
 manylinux-x86_64-image = "manylinux2014"
 manylinux-aarch64-image = "manylinux2014"
