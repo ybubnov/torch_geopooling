@@ -15,6 +15,8 @@ set(torch_geopooling_LIBRARY_SOVERSION "1")
 
 include_directories(include)
 include_directories(include/torch_geopooling)
+include_directories(src)
+
 
 aux_source_directory(src torch_geopooling_SOURCES)
 
