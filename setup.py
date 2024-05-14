@@ -50,7 +50,7 @@ setup(
                 "src/tile.cc",
                 "torch_geopooling/__bind__/python_module.cc",
             ],
-            include_dirs=[str(Path.cwd() / "include")],
+            include_dirs=[str(Path.cwd() / "include"), str(Path.cwd() / "src")],
             extra_compile_args=["-DFMT_HEADER_ONLY=1"],
         ),
     ],
