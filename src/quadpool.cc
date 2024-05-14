@@ -32,7 +32,6 @@
 #include <torch_geopooling/quadtree_set.h>
 
 #include <quadpool_op.h>
-#include <tensor_iterator.h>
 
 
 namespace torch_geopooling {
