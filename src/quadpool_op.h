@@ -28,10 +28,82 @@
 #include <torch_geopooling/quadtree_set.h>
 #include <torch_geopooling/quadtree_options.h>
 
-#include <tensor_iterator.h>
-
 
 namespace torch_geopooling {
+
+
+template<typename Scalar, int N>
+class tensor_iterator2d {
+public:
+    using iterator_category = std::forward_iterator_tag;
+
+    using iterator = tensor_iterator2d<Scalar, N>;
+
+    using value_type = std::array<Scalar, N>;
+
+    using reference = value_type&;
+
+    using pointer = value_type*;
+
+    tensor_iterator2d(const torch::Tensor& tensor)
+    : m_accessor(tensor.accessor<Scalar, 2>()),
+      m_begin(0),
+      m_end(tensor.size(0))
+    {
+        TORCH_CHECK(
+            tensor.size(1) == N,
+            "tensor_iterator2d: incompatible shape of a size(1) = ",
+            tensor.size(1), ", expect ", N
+        );
+    }
+
+    iterator
+    begin()
+    { return *this; }
+
+    iterator
+    end()
+    {
+        iterator it = *this;
+        it.m_begin = it.m_end;
+        return it;
+    }
+
+    iterator&
+    operator++()
+    {
+        m_begin = std::min(m_begin + 1, m_end);
+        return *this;
+    }
+
+    value_type
+    operator[](std::size_t idx) const
+    {
+        value_type row;
+        for (auto i = 0; i < N; i++) {
+            row[i] = m_accessor[idx][i];
+        }
+        return row;
+    }
+
+    value_type
+    operator*()
+    {
+        // TODO: Ensure that m_begin does not cause index error exception.
+        return (*this)[m_begin];
+    }
+
+    bool
+    operator!=(const iterator& rhs)
+    {
+        return !(m_accessor.data() == rhs.m_accessor.data() && m_begin == rhs.m_begin);
+    }
+
+private:
+    torch::TensorAccessor<Scalar, 2> m_accessor;
+    std::size_t m_begin;
+    std::size_t m_end;
+};
 
 
 /// Structure represents a quadtree operation.
