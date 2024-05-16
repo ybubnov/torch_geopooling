@@ -19,6 +19,7 @@ import torch
 from torch import Tensor, nn
 
 from torch_geopooling import functional as F
+from torch_geopooling.tiling import Exterior
 
 __all__ = ["LinearQuadPool2d", "MaxQuadPool2d"]
 
@@ -27,7 +28,7 @@ class _QuadPool(nn.Module):
     def __init__(
         self,
         num_features: int,
-        exterior: Tuple[float, float, float, float],
+        exterior: Exterior,
         max_depth: int = 17,
         capacity: int = 1,
         precision: Optional[int] = 7,
