@@ -15,27 +15,20 @@
 
 from __future__ import annotations
 
-from typing import Iterator, NamedTuple, Tuple
+from typing import Iterator, Tuple
 
 from torch import Tensor
+
+from torch_geopooling.tiling import Tile
 
 __all__ = ["TileWKT"]
 
 
-class _Tile(NamedTuple):
-    z: int
-    x: int
-    y: int
-
-    def child(self, x: int, y: int) -> _Tile:
-        return _Tile(self.z + 1, self.x * 2 + x, self.y * 2 + y)
-
-
 class _TileSet(set):
     def __init__(self, tiles: Tensor) -> None:
-        super().__init__(_Tile(*tile.detach().tolist()) for tile in tiles)
+        super().__init__(Tile(*tile.detach().tolist()) for tile in tiles)
 
-    def is_terminal(self, tile: _Tile) -> bool:
+    def is_terminal(self, tile: Tile) -> bool:
         return (
             (tile.child(0, 0) not in self)
             and (tile.child(0, 1) not in self)
@@ -89,7 +82,7 @@ class TileWKT:
             width = self._width / (1 << z)
             height = self._height / (1 << z)
 
-            if (not self.internal) and (not tileset.is_terminal(_Tile(z, x, y))):
+            if (not self.internal) and (not tileset.is_terminal(Tile(z, x, y))):
                 continue
 
             xmin = self._xmin + width * x

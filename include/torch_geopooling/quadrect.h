@@ -141,6 +141,9 @@ public:
         );
     }
 
+    /// Split rectangle into 4 sub-rectangles of the equal size
+    ///
+    /// Method returns a quad of 4 rectangles that together assemble the parent's rectangle.
     quad<quadrect>
     symmetric_split() const
     {
@@ -155,6 +158,10 @@ public:
         );
     }
 
+    /// Slice from the rectangle the given Tile.
+    ///
+    /// Method assumes that the rectangle is a Tile on a root level (0,0,0), then calculates
+    /// a coordinates of a new rectangle and returns it.
     quadrect
     slice(const Tile& tile) const
     {

@@ -13,21 +13,25 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Union
 
 import torch
 from torch import Tensor, nn
 
 from torch_geopooling import functional as F
+from torch_geopooling.tiling import Exterior
 
 __all__ = ["LinearQuadPool2d", "MaxQuadPool2d"]
+
+
+_Exterior = Union[Exterior, Tuple[float, float, float, float]]
 
 
 class _QuadPool(nn.Module):
     def __init__(
         self,
         num_features: int,
-        exterior: Tuple[float, float, float, float],
+        exterior: _Exterior,
         max_depth: int = 17,
         capacity: int = 1,
         precision: Optional[int] = 7,

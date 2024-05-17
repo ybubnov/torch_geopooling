@@ -32,6 +32,11 @@
 namespace torch_geopooling {
 
 
+/// Tensor iterator is a class that unites tensor accessor and C++ iterator trait.
+///
+/// This class is used to access 2-dimensional tensor as contiguous vector of array. Template
+/// parameter `N` defines the size of the arrays. Iterator takes only the first `N` elements
+/// from the second dimension to the output result.
 template<typename Scalar, int N>
 class tensor_iterator2d {
 public:
@@ -84,6 +89,13 @@ public:
             row[i] = m_accessor[idx][i];
         }
         return row;
+    }
+
+    /// Return an element from 2-dimensional array at position i,j.
+    Scalar
+    at(std::size_t i, std::size_t j) const
+    {
+        return m_accessor[i][j];
     }
 
     value_type

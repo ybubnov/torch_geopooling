@@ -95,6 +95,7 @@ public:
     operator<(const Tile& rhs) const;
 
     const static Tile root;
+
 private:
     std::size_t m_z, m_x, m_y;
 };
