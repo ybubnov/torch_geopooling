@@ -3,7 +3,7 @@ name = "torch_geopooling"
 version = "1.0.0rc1"
 license = {file = "LICENSE"}
 
-description = "The geospatial pooling modules for neural networks for PyTorch"
+description = "The geospatial pooling modules for neural networks in PyTorch"
 authors = [
   {name = "Yakau Bubnou", email = "girokompass@gmail.com"}
 ]
