@@ -56,7 +56,9 @@ class Exterior(NamedTuple):
         )
 
 
-def regular_tiling(polygon: Polygon, exterior: Exterior, z: int) -> Iterator[Tile]:
+def regular_tiling(
+    polygon: Polygon, exterior: Exterior, z: int, internal: bool = False
+) -> Iterator[Tile]:
     """Returns a regular quad-tiling (tiles of the same size).
 
     Method returns all tiles of level (z) that have a common intersection with a specified
@@ -67,6 +69,8 @@ def regular_tiling(polygon: Polygon, exterior: Exterior, z: int) -> Iterator[Til
         exterior: Exterior (bounding box) of the quadtree. For example, for geospatial
             coordinates, this will be `(-180.0, -90.0, 360.0, 180.0)`.
         z: Zoom level of the tiles.
+        internal: When `True`, returns internal tiles (nodes) of the Quadtree up to a root
+            tile (0,0,0).
 
     Returns:
         Iterator of tiles.
@@ -80,7 +84,7 @@ def regular_tiling(polygon: Polygon, exterior: Exterior, z: int) -> Iterator[Til
         if not tile_poly.intersects(polygon):
             continue
 
-        if tile.z >= z:
+        if internal or tile.z >= z:
             yield tile
-        else:
+        if tile.z < z:
             queue.extend(tile.children())
