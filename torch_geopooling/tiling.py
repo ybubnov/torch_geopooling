@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from collections import deque
 from itertools import product
-from typing import Iterator, NamedTuple
+from typing import Iterator, NamedTuple, Tuple
 
 from shapely.geometry import Polygon
 
-__all__ = ["Exterior", "Tile", "regular_tiling"]
+__all__ = ["Exterior", "ExteriorTuple", "Tile", "regular_tiling"]
 
 
 class Tile(NamedTuple):
@@ -26,11 +26,18 @@ class Tile(NamedTuple):
             yield self.child(x, y)
 
 
+ExteriorTuple = Tuple[float, float, float, float]
+
+
 class Exterior(NamedTuple):
     xmin: float
     ymin: float
     width: float
     height: float
+
+    @classmethod
+    def from_tuple(cls, exterior_tuple: ExteriorTuple) -> Exterior:
+        return cls(*exterior_tuple)
 
     @property
     def xmax(self) -> float:

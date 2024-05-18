@@ -16,11 +16,11 @@
 import torch
 from torch.nn import L1Loss
 
-from torch_geopooling.nn import LinearQuadPool2d, MaxQuadPool2d
+from torch_geopooling.nn import AdaptiveMaxQuadPool2d, AdaptiveQuadPool2d
 
 
-def test_linear_quad_pool2d_gradient() -> None:
-    pool = LinearQuadPool2d(1024, (-180, -90, 360, 180))
+def test_adaptive_quad_pool2d_gradient() -> None:
+    pool = AdaptiveQuadPool2d(1024, (-180, -90, 360, 180))
 
     input = torch.rand((100, 2), dtype=torch.float64) * 90
     x = torch.rand((100,), dtype=torch.float64)
@@ -37,12 +37,11 @@ def test_linear_quad_pool2d_gradient() -> None:
     assert pool.bias.grad is not None
 
 
-def test_max_quad_pool2d_gradient() -> None:
-    max_pool = MaxQuadPool2d(1024, (-180, -90, 360, 180))
+def test_adaptive_max_quad_pool2d_gradient() -> None:
+    max_pool = AdaptiveMaxQuadPool2d(1024, (-180, -90, 360, 180))
 
     input = torch.rand((100, 2), dtype=torch.float64) * 90
-    x = torch.rand((100,), dtype=torch.float64)
-    y = max_pool(input, x)
+    y = max_pool(input)
 
     assert max_pool.weight.grad is None
 
