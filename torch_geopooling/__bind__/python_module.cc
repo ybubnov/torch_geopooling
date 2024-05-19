@@ -13,6 +13,8 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
     m.def("linear_quad_pool2d", &linear_quad_pool2d);
 
     m.def("max_quad_pool2d", &max_quad_pool2d);
+
+    m.def("avg_quad_pool2d", &avg_quad_pool2d);
 }
 
 

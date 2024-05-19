@@ -448,8 +448,8 @@ private:
         auto tile = m_queue.front();
         m_queue.pop();
 
-        if (m_set->has_children(tile)) {
-            for (auto child_tile : tile.children()) {
+        for (auto child_tile : tile.children()) {
+            if (m_set->contains(child_tile)) {
                 m_queue.push(child_tile);
             }
         }
