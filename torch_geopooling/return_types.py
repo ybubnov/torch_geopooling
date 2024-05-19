@@ -27,3 +27,8 @@ class linear_quad_pool2d(NamedTuple):
 class max_quad_pool2d(NamedTuple):
     tiles: Tensor
     weight: Tensor
+
+
+class avg_quad_pool2d(NamedTuple):
+    tiles: Tensor
+    weight: Tensor

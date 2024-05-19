@@ -379,7 +379,9 @@ struct quadpool_stat_op : public quadpool_op<Coordinate, Index>
             /// using a specified function.
             std::vector<torch::Tensor> child_weights;
             for (auto child_tile : tile.children()) {
-                child_weights.push_back(m_stat_tile_index.at(child_tile));
+                if (auto stat = m_stat_tile_index.find(child_tile); stat != m_stat_tile_index.end()) {
+                    child_weights.push_back(stat->second);
+                }
             }
 
             auto stat = m_stat_function(torch::stack(child_weights));
