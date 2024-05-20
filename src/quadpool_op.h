@@ -232,16 +232,30 @@ struct quadpool_op
     }
 
     torch::Tensor
-    forward_weight(tensor_reference index, tensor_reference weight) const
+    weight_select(tensor_reference index, tensor_reference weight) const
     {
         check_weight(weight);
         return at::index_select(weight, 0, index);
     }
 
     torch::Tensor
-    forward_weight(const std::vector<Index>& index, tensor_reference weight) const
+    weight_select(const std::vector<Index>& index, tensor_reference weight) const
     {
-        return forward_weight(torch::tensor(index), weight);
+        return weight_select(torch::tensor(index), weight);
+    }
+
+    torch::Tensor
+    weight_select(const Tile& tile, tensor_reference weight) const
+    {
+        std::vector<Index> index({m_tile_index.at(tile)});
+        return weight_select(index, weight);
+    }
+
+    std::tuple<Index, torch::Tensor>
+    weight_index(const Tile& tile, tensor_reference weight) const
+    {
+        std::vector<Index> index({m_tile_index.at(tile)});
+        return std::make_tuple(index[0], weight_select(index, weight));
     }
 
 private:
@@ -321,30 +335,39 @@ private:
 /// Structure represents a aggregation (statistic) quadtree operation.
 ///
 /// On instance create, it creates a statistic index for fast access by a tile.
-template<typename Coordinate = double, typename Index = int32_t>
+///
+/// There are two functions used to build a stat quadtree: `init` and `stat`, which essentially
+/// are used to compute values for terminal and intermediate nodes respectively. The major
+/// implication of this separation is that `init` part should work only with `m_tile_index`,
+/// since `m_stat_tile_index` is not yet created. And `stat` function is called during
+/// construction of `m_stat_tile_index`.
+template<typename Coordinate = double, typename Index = int32_t, typename Result = torch::Tensor>
 struct quadpool_stat_op : public quadpool_op<Coordinate, Index>
 {
     using base = quadpool_op<Coordinate, Index>;
 
-    using stat_quadtree_index = std::unordered_map<Tile, torch::Tensor>;
+    using stat_quadtree_index = std::unordered_map<Tile, Result>;
 
-    using stat_function = std::function<torch::Tensor(const torch::Tensor&)>;
+    using init_function = std::function<Result(const base&, const Tile&)>;
+    using stat_function = std::function<Result(const quadpool_stat_op&, std::vector<Tile>&)>;
 
     /// Stat tile index is comprised of both terminal and intermediate nodes.
     stat_quadtree_index m_stat_tile_index;
+    init_function m_init_function;
     stat_function m_stat_function;
 
     quadpool_stat_op(
         std::string op,
+        init_function init_function,
         stat_function stat_function,
         typename base::tensor_reference tiles,
         typename base::tensor_reference input,
-        typename base::tensor_reference weight,
         const typename base::quadtree_exterior& exterior,
         const quadtree_options& options,
         bool training
     )
     : quadpool_op<Coordinate, Index>(op, tiles, input, exterior, options, training),
+      m_init_function(init_function),
       m_stat_function(stat_function),
       m_stat_tile_index()
     {
@@ -355,9 +378,8 @@ struct quadpool_stat_op : public quadpool_op<Coordinate, Index>
         // weight tensor itself.
         for (auto item : base::m_tile_index) {
             auto tile = item.first;
-            auto index = std::vector<Index>({item.second});
+            auto stat = m_init_function(*this, tile);
 
-            auto stat = base::forward_weight(index, weight);
             m_stat_tile_index.insert(std::make_pair(tile, stat));
             unvisited.push(tile.parent());
         }
@@ -375,16 +397,8 @@ struct quadpool_stat_op : public quadpool_op<Coordinate, Index>
                 continue;
             }
 
-            /// Query values from children, put them into a tensor and compute a statistic
-            /// using a specified function.
-            std::vector<torch::Tensor> child_weights;
-            for (auto child_tile : tile.children()) {
-                if (auto stat = m_stat_tile_index.find(child_tile); stat != m_stat_tile_index.end()) {
-                    child_weights.push_back(stat->second);
-                }
-            }
-
-            auto stat = m_stat_function(torch::stack(child_weights));
+            auto child_tiles = tile.children();
+            auto stat = m_stat_function(*this, child_tiles);
             m_stat_tile_index.insert(std::make_pair(tile, stat));
 
             // Do not compute the root tile multiple times, once is enough.
@@ -392,6 +406,28 @@ struct quadpool_stat_op : public quadpool_op<Coordinate, Index>
                 unvisited.push(tile.parent());
             }
         }
+    }
+
+    std::vector<Result>
+    result_select(
+        const std::vector<Tile>& tiles,
+        const torch::Tensor& weight,
+        bool missing_ok = false
+    ) const
+    {
+        std::vector<Result> results;
+        for (const auto& tile : tiles) {
+            auto stat = m_stat_tile_index.find(tile);
+            if (stat != m_stat_tile_index.end()) {
+                results.push_back(stat->second);
+                continue;
+            }
+            if (!missing_ok) {
+                throw value_error("quadpool_stat_op: tile {} not found in stat index", tile);
+            }
+        }
+
+        return results;
     }
 };
 

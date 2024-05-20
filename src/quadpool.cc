@@ -21,6 +21,7 @@
 #include <vector>
 #include <queue>
 
+#include <ATen/Dispatch.h>
 #include <ATen/Functions.h>
 #include <ATen/Parallel.h>
 #include <ATen/TensorAccessor.h>
@@ -100,12 +101,29 @@ max_quad_pool2d(
         .precision(precision)
         .capacity(capacity);
 
-    auto max_fn = [](const torch::Tensor& t) -> torch::Tensor {
-        return at::unsqueeze(at::max(t), 0);
+    using coordinate_type = double;
+    using index_type = int32_t;
+    using result_type = torch::Tensor;
+
+    using init_operation_reference = const quadpool_op<coordinate_type, index_type>&;
+    using stat_operation_reference = const quadpool_stat_op<coordinate_type, index_type, result_type>&;
+
+    /// Within initialization step, select a weight associated with the given tile.
+    auto init_fn = [&](init_operation_reference op, const Tile& tile) -> result_type {
+        return op.weight_select(tile, weight);
+    };
+    /// Within statistics calculation step, select weights (those are results) associated
+    /// with the each node of a stat Quadtree and select a maximum value amongst them.
+    ///
+    /// Since we know that init function produces as a result torch::Tensor, we could just
+    /// stack results and calculate maximum, without additional processing.
+    auto stat_fn = [&](stat_operation_reference op, const std::vector<Tile>& tiles) -> result_type {
+        auto weights = torch::stack(op.result_select(tiles, weight, /*missing_ok=*/true));
+        return at::unsqueeze(at::max(weights), 0);
     };
 
-    quadpool_stat_op op(
-        "max_quad_pool2d", max_fn, tiles, input, weight, exterior, options, training
+    quadpool_stat_op<coordinate_type, index_type, result_type> op(
+        "max_quad_pool2d", init_fn, stat_fn, tiles, input, exterior, options, training
     );
 
     const int64_t grain_size = at::internal::GRAIN_SIZE;
@@ -133,6 +151,86 @@ max_quad_pool2d(
 }
 
 
+torch::Tensor
+max_quad_pool2d_backward(
+    const torch::Tensor& grad_output,
+    const torch::Tensor& tiles,
+    const torch::Tensor& input,
+    const torch::Tensor& weight,
+    const c10::ArrayRef<double>& exterior,
+    std::optional<std::size_t> max_depth,
+    std::optional<std::size_t> capacity,
+    std::optional<std::size_t> precision
+)
+{
+    auto options = quadtree_options()
+        .max_terminal_nodes(weight.size(0))
+        .max_depth(max_depth)
+        .precision(precision)
+        .capacity(capacity);
+
+    using coordinate_type = double;
+    using index_type = int32_t;
+    using result_type = std::tuple<index_type, torch::Tensor>;
+
+    using init_op_type = quadpool_op<coordinate_type, index_type>;
+    using stat_op_type = quadpool_stat_op<coordinate_type, index_type, result_type>;
+
+    /// For computation of a backward path, we need to maintain both, maximum value
+    /// and index of that maximum value in the weights vector.
+    auto init_fn = [&](const init_op_type& op, const Tile& tile) -> result_type {
+        return op.weight_index(tile, weight);
+    };
+    auto stat_fn = [&](const stat_op_type& op, const std::vector<Tile>& tiles) -> result_type {
+        auto results = op.result_select(tiles, weight, /*missing_ok=*/true);
+
+        std::vector<torch::Tensor> weights;
+        std::transform(
+            results.begin(),
+            results.end(),
+            std::back_insert_iterator(weights),
+            [&](result_type result) -> torch::Tensor { return std::get<1>(result); }
+        );
+
+        auto [value, index] = at::max(torch::stack(weights), 0);
+        auto max_tensor = at::unsqueeze(value, 0);
+        auto max_index = std::get<0>(results[index.item<int32_t>()]);
+
+        return std::make_tuple(max_index, max_tensor);
+    };
+
+    stat_op_type op(
+        "max_quad_pool2d_backward",
+        init_fn, stat_fn, tiles, input, exterior, options, /*training=*/false
+    );
+
+    const int64_t input_size = input.size(0);
+    const int64_t grain_size = at::internal::GRAIN_SIZE;
+    const int64_t total_size = options.max_terminal_nodes();
+
+    auto input_it = op.make_input_iterator(input);
+    auto grad_weight = at::zeros(weight.sizes(), grad_output.options());
+
+    at::parallel_for(0, total_size, grain_size, [&](int64_t begin, int64_t end) {
+        for (const auto index : c10::irange(input_size)) {
+            const auto& point = input_it[index];
+            const auto& node = op.m_set.find(point);
+
+            auto result = op.m_stat_tile_index.at(node.tile().parent());
+            auto maxindex = std::get<0>(result);
+            std::cout << "parallel: (" << point[0] << "," << point[1] << ") maxindex=" << maxindex << ", index=" << index << std::endl;
+
+            if (maxindex >= begin && maxindex < end) {
+                grad_weight[maxindex] += grad_output[index];
+            }
+        }
+    });
+
+    return grad_weight;
+}
+
+
+/*
 std::tuple<torch::Tensor, torch::Tensor>
 avg_quad_pool2d(
     const torch::Tensor& tiles,
@@ -182,6 +280,7 @@ avg_quad_pool2d(
 
     return std::make_tuple(tiles_out, weight_out);
 }
+*/
 
 
 } // namespace torch_geopooling
