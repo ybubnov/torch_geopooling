@@ -13,12 +13,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Optional, Tuple
+from typing import NamedTuple, Optional, Tuple
 
-from torch import Tensor
+from torch import Tensor, autograd
+from torch.autograd.function import FunctionCtx
 
 import torch_geopooling._C as _C
-import torch_geopooling.return_types as return_types
+from torch_geopooling import return_types
+from torch_geopooling.tiling import ExteriorTuple
 
 __all__ = ["avg_quad_pool2d", "linear_quad_pool2d", "max_quad_pool2d"]
 
@@ -41,6 +43,40 @@ def linear_quad_pool2d(
     return return_types.linear_quad_pool2d(tiles, weight, bias)
 
 
+class FunctionParams(NamedTuple):
+    max_depth: Optional[int] = None
+    capacity: Optional[int] = None
+    precision: Optional[int] = None
+
+
+class MaxQuadPool2dFunction(autograd.Function):
+    @staticmethod
+    def forward(
+        ctx: FunctionCtx,
+        tiles: Tensor,
+        input: Tensor,
+        weight: Tensor,
+        exterior: ExteriorTuple,
+        training: bool,
+        params: FunctionParams,
+    ) -> Tuple[Tensor, Tensor]:
+        return _C.max_quad_pool2d(tiles, input, weight, exterior, training, *params)
+
+    @staticmethod
+    def setup_context(ctx: FunctionCtx, inputs: Tuple, outputs: Tuple) -> None:
+        tiles, input, weight, exterior, _, params = inputs
+        ctx.save_for_backward(tiles, input, weight)
+        ctx.exterior = exterior
+        ctx.params = ctx.params
+
+    @staticmethod
+    def backward(
+        ctx: FunctionCtx, grad_tiles: Tensor, grad_output: Tensor
+    ) -> Tuple[Optional[Tensor], ...]:
+        grad_weight = _C.max_quad_pool2d_backward(*ctx.saved_tensors, ctx.exterior, *ctx.params)
+        return None, None, grad_weight, None, None, None
+
+
 def max_quad_pool2d(
     tiles: Tensor,
     input: Tensor,
@@ -52,10 +88,8 @@ def max_quad_pool2d(
     capacity: Optional[int] = None,
     precision: Optional[int] = None,
 ) -> return_types.max_quad_pool2d:
-    tiles, weight = _C.max_quad_pool2d(
-        tiles, input, weight, exterior, training, max_depth, capacity, precision
-    )
-    return return_types.max_quad_pool2d(tiles, weight)
+    params = FunctionParams(max_depth=max_depth, capacity=capacity, precision=precision)
+    return MaxQuadPool2dFunction.apply(tiles, input, weight, exterior, training, params)
 
 
 def avg_quad_pool2d(

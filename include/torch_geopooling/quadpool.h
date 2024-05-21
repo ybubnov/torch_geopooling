@@ -74,7 +74,7 @@ max_quad_pool2d(
 
 torch::Tensor
 max_quad_pool2d_backward(
-    const torch::Tensor& grad_weight,
+    const torch::Tensor& grad_output,
     const torch::Tensor& tiles,
     const torch::Tensor& input,
     const torch::Tensor& weight,

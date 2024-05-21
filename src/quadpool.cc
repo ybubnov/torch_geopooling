@@ -192,8 +192,7 @@ max_quad_pool2d_backward(
             [&](result_type result) -> torch::Tensor { return std::get<1>(result); }
         );
 
-        auto [value, index] = at::max(torch::stack(weights), 0);
-        auto max_tensor = at::unsqueeze(value, 0);
+        auto [max_tensor, index] = at::max(torch::stack(weights), 0);
         auto max_index = std::get<0>(results[index.item<int32_t>()]);
 
         return std::make_tuple(max_index, max_tensor);
@@ -218,7 +217,6 @@ max_quad_pool2d_backward(
 
             auto result = op.m_stat_tile_index.at(node.tile().parent());
             auto maxindex = std::get<0>(result);
-            std::cout << "parallel: (" << point[0] << "," << point[1] << ") maxindex=" << maxindex << ", index=" << index << std::endl;
 
             if (maxindex >= begin && maxindex < end) {
                 grad_weight[maxindex] += grad_output[index];
