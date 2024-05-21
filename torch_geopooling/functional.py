@@ -52,7 +52,6 @@ class FunctionParams(NamedTuple):
 class MaxQuadPool2dFunction(autograd.Function):
     @staticmethod
     def forward(
-        ctx: FunctionCtx,
         tiles: Tensor,
         input: Tensor,
         weight: Tensor,
