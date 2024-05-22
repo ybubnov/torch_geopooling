@@ -75,6 +75,7 @@ class MaxQuadPool2d(autograd.Function):
         grad_weight = _C.max_quad_pool2d_backward(
             grad_output, *ctx.saved_tensors, ctx.exterior, *ctx.params
         )
+        # Drop gradient for tiles, this should not be changed by an optimizer.
         return None, None, grad_weight, None, None, None
 
 
