@@ -66,7 +66,7 @@ class MaxQuadPool2dFunction(autograd.Function):
         tiles, input, weight, exterior, _, params = inputs
         ctx.save_for_backward(tiles, input, weight)
         ctx.exterior = exterior
-        ctx.params = ctx.params
+        ctx.params = params
 
     @staticmethod
     def backward(
