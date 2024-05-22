@@ -49,7 +49,7 @@ class FunctionParams(NamedTuple):
     precision: Optional[int] = None
 
 
-class MaxQuadPool2dFunction(autograd.Function):
+class MaxQuadPool2d(autograd.Function):
     @staticmethod
     def forward(
         tiles: Tensor,
@@ -88,7 +88,8 @@ def max_quad_pool2d(
     precision: Optional[int] = None,
 ) -> return_types.max_quad_pool2d:
     params = FunctionParams(max_depth=max_depth, capacity=capacity, precision=precision)
-    return MaxQuadPool2dFunction.apply(tiles, input, weight, exterior, training, params)
+    result = MaxQuadPool2dFunction.apply(tiles, input, weight, exterior, training, params)
+    return return_types.max_quad_pool2d(*result)
 
 
 def avg_quad_pool2d(
