@@ -88,7 +88,7 @@ def max_quad_pool2d(
     precision: Optional[int] = None,
 ) -> return_types.max_quad_pool2d:
     params = FunctionParams(max_depth=max_depth, capacity=capacity, precision=precision)
-    result = MaxQuadPool2dFunction.apply(tiles, input, weight, exterior, training, params)
+    result = MaxQuadPool2d.apply(tiles, input, weight, exterior, training, params)
     return return_types.max_quad_pool2d(*result)
 
 
