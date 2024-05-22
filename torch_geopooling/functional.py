@@ -72,7 +72,9 @@ class MaxQuadPool2d(autograd.Function):
     def backward(
         ctx: FunctionCtx, grad_tiles: Tensor, grad_output: Tensor
     ) -> Tuple[Optional[Tensor], ...]:
-        grad_weight = _C.max_quad_pool2d_backward(*ctx.saved_tensors, ctx.exterior, *ctx.params)
+        grad_weight = _C.max_quad_pool2d_backward(
+            grad_output, *ctx.saved_tensors, ctx.exterior,*ctx.params
+        )
         return None, None, grad_weight, None, None, None
 
 
