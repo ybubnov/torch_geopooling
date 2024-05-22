@@ -64,7 +64,7 @@ class MaxQuadPool2d(autograd.Function):
     @staticmethod
     def setup_context(ctx: FunctionCtx, inputs: Tuple, outputs: Tuple) -> None:
         tiles, input, weight, exterior, _, params = inputs
-        ctx.save_for_backward(tiles, input, weight)
+        ctx.save_for_backward(tiles.view_as(tiles), input.view_as(input), weight.view_as(weight))
         ctx.exterior = exterior
         ctx.params = params
 
@@ -76,7 +76,7 @@ class MaxQuadPool2d(autograd.Function):
             grad_output, *ctx.saved_tensors, ctx.exterior, *ctx.params
         )
         # Drop gradient for tiles, this should not be changed by an optimizer.
-        return None, None, grad_weight, None, None, None
+        return grad_tiles, None, grad_weight, None, None, None
 
 
 def max_quad_pool2d(

@@ -351,10 +351,11 @@ struct quadpool_stat_op : public quadpool_op<Coordinate, Index>
     using init_function = std::function<Result(const base&, const Tile&)>;
     using stat_function = std::function<Result(const quadpool_stat_op&, std::vector<Tile>&)>;
 
-    /// Stat tile index is comprised of both terminal and intermediate nodes.
-    stat_quadtree_index m_stat_tile_index;
     init_function m_init_function;
     stat_function m_stat_function;
+
+    /// Stat tile index is comprised of both terminal and intermediate nodes.
+    stat_quadtree_index m_stat_tile_index;
 
     quadpool_stat_op(
         std::string op,
