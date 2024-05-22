@@ -45,7 +45,7 @@ def test_quad_pool2d() -> None:
 def test_max_quad_pool2d() -> None:
     tiles = torch.empty((0, 3), dtype=torch.int32)
     input = torch.rand((100, 2), dtype=torch.float64) * 10.0
-    weight = torch.randn([64], dtype=torch.float64)
+    weight = torch.randn([64], dtype=torch.float64, requires_grad=True)
 
     result = max_quad_pool2d(
         tiles,
