@@ -104,7 +104,7 @@ class BuildExtBackend:
 
     def initialize_configuration(self, pyproject_text: str) -> None:
         pyproject = tomllib.loads(pyproject_text)
-        self.configuration = pyproject.get("tool", {}).get("conan")
+        self.configuration = pyproject.get("tool", {}).get("setuptools_cxx")
 
     def initialize_conanfile(self) -> None:
         conanfile = ConanFile("torch_geopooling")
