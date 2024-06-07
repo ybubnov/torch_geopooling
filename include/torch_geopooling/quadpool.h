@@ -25,23 +25,22 @@
 namespace torch_geopooling {
 
 
-/// Applies linear transformation over Quadtree decomposition of input 2D coordinates.
+/// Dynamic lookup index over Quadtree decomposition of input 2D coordinates.
 ///
-/// This function constructs a lookup quadtree to group closely situated 2D points. Each terminal
-/// node in the resulting quadtree is paired with weight and bias. Thus when providing an input
-/// coordinate, the function retrieves the corresponding terminal node for each input coordinate
-/// and returns weight and bias.
+/// This function constructs an internal lookup quadtree to organize closely situated 2D points.
+/// Each terminal node in the resulting quadtree is paired with a weight. Thus, when providing
+/// an input coordinate, the module retrieves the corresponding terminal node and returns its
+/// associated weight.
 ///
 /// This function is stateless, but training could change internal quadtree, therefore it
 /// returns quadtree tiles to reconstruct the learned quadtree on the next evaluation iteration.
 ///
-/// \return tuple of tree elements: (tiles, weights, biases).
-std::tuple<torch::Tensor, torch::Tensor, torch::Tensor>
-linear_quad_pool2d(
+/// \return tuple of tree elements: (tiles, weight).
+std::tuple<torch::Tensor, torch::Tensor>
+quad_pool2d(
     const torch::Tensor& tiles,
     const torch::Tensor& input,
     const torch::Tensor& weight,
-    const torch::Tensor& bias,
     const c10::ArrayRef<double>& exterior,
     bool training = true,
     std::optional<std::size_t> max_depth = std::nullopt,
@@ -50,11 +49,12 @@ linear_quad_pool2d(
 );
 
 
-/// Applies maximum pooling over Quadtree decomposition of 2D coordinates.
+/// Dynamic maximum pooling over Quadtree decomposition of input 2D coordinates.
 ///
-/// This module constructs a lookup quadtree to group closely situated 2D points. Each terminal
-/// node in the resulting quadtree is paired with weight. When computing the weight for the
-/// input coordinate, method selects maximum value of weights within a terminal node group.
+/// This function constructs an internal lookup quadtree to organize closely situated 2D points.
+/// Each terminal node in the resulting quadtree is assigned a weight value. For each input
+/// coordinate, the module queries a "terminal group" of nodes and calculates the maximum value
+/// from a `weight` vector associated with these nodes.
 ///
 /// Terminal node group is a set of nodes in a lookup quadtree that share the common parent.
 ///

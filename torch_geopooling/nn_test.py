@@ -21,25 +21,23 @@ from torch_geopooling.nn import AdaptiveMaxQuadPool2d, AdaptiveQuadPool2d, MaxQu
 
 
 def test_adaptive_quad_pool2d_gradient() -> None:
-    pool = AdaptiveQuadPool2d(1024, (-180, -90, 360, 180))
+    pool = AdaptiveQuadPool2d(1024, 1, (-180, -90, 360, 180))
 
     input = torch.rand((100, 2), dtype=torch.float64) * 90
     x = torch.rand((100,), dtype=torch.float64)
-    y = pool(input, x)
+    y = pool(input) * x
 
     assert pool.weight.grad is None
-    assert pool.bias.grad is None
 
     loss_fn = L1Loss()
     loss = loss_fn(y, torch.ones_like(y))
     loss.backward()
 
     assert pool.weight.grad is not None
-    assert pool.bias.grad is not None
 
 
 def test_adaptive_max_quad_pool2d_gradient() -> None:
-    max_pool = AdaptiveMaxQuadPool2d(1024, (-180, -90, 360, 180))
+    max_pool = AdaptiveMaxQuadPool2d(1024, 1, (-180, -90, 360, 180))
 
     input = torch.rand((100, 2), dtype=torch.float64) * 90
     y = max_pool(input)
@@ -57,7 +55,7 @@ def test_max_quad_pool2d_gradient() -> None:
     poly = Polygon([(0.0, 0.0), (1.0, 0.0), (1.0, 1.1), (0.0, 1.0)])
     exterior = (0.0, 0.0, 1.0, 1.0)
 
-    max_pool = MaxQuadPool2d(poly, exterior, max_depth=5)
+    max_pool = MaxQuadPool2d(2, poly, exterior, max_depth=5)
     assert max_pool.num_features == 1 << 10
 
     input = torch.rand((100, 2), dtype=torch.float64)
