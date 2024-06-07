@@ -30,7 +30,7 @@ BOOST_AUTO_TEST_CASE(max_quad_pool2d_training)
         {8.0, 8.0}
     }, tensor_options);
 
-    c10::ArrayRef<double> exterior = {0.0, 0.0, 10.0, 10.0};
+    c10::ArrayRef<double> exterior({0.0, 0.0, 10.0, 10.0});
     auto [tiles_out, weight_out] = max_quad_pool2d(tiles, input_train, weight, exterior, true);
 
     BOOST_REQUIRE_EQUAL(tiles_out.dim(), 2);
