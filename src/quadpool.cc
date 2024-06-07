@@ -38,12 +38,11 @@
 namespace torch_geopooling {
 
 
-std::tuple<torch::Tensor, torch::Tensor, torch::Tensor>
-linear_quad_pool2d(
+std::tuple<torch::Tensor, torch::Tensor>
+quad_pool2d(
     const torch::Tensor& tiles,
     const torch::Tensor& input,
     const torch::Tensor& weight,
-    const torch::Tensor& bias,
     const c10::ArrayRef<double>& exterior,
     bool training,
     std::optional<std::size_t> max_depth,
@@ -57,7 +56,7 @@ linear_quad_pool2d(
         .precision(precision)
         .capacity(capacity);
 
-    quadpool_op op("linear_quad_pool2d", tiles, input, exterior, options, training);
+    quadpool_op op("quad_pool2d", tiles, input, exterior, options, training);
 
     const int64_t grain_size = at::internal::GRAIN_SIZE;
     const int64_t total_size = input.size(0);
@@ -77,9 +76,9 @@ linear_quad_pool2d(
     });
 
     torch::Tensor tiles_out = op.forward_tiles(tiles);
-    auto [weight_out, bias_out] = op.forward(indices, weight, bias);
+    torch::Tensor weight_out = op.weight_select(indices, weight);
 
-    return std::make_tuple(tiles_out, weight_out, bias_out);
+    return std::make_tuple(tiles_out, weight_out);
 }
 
 
@@ -119,7 +118,8 @@ max_quad_pool2d(
     /// stack results and calculate maximum, without additional processing.
     auto stat_fn = [&](stat_operation_reference op, const std::vector<Tile>& tiles) -> result_type {
         auto weights = torch::stack(op.result_select(tiles, weight, /*missing_ok=*/true));
-        return at::unsqueeze(at::max(weights), 0);
+        auto [max_tensor, _] = at::max(weights, 0);
+        return max_tensor;
     };
 
     quadpool_stat_op<coordinate_type, index_type, result_type> op(
@@ -171,10 +171,12 @@ max_quad_pool2d_backward(
 
     using coordinate_type = double;
     using index_type = int32_t;
-    using result_type = std::tuple<index_type, torch::Tensor>;
+    using result_type = std::tuple<torch::Tensor, torch::Tensor>;
 
     using init_op_type = quadpool_op<coordinate_type, index_type>;
     using stat_op_type = quadpool_stat_op<coordinate_type, index_type, result_type>;
+
+    const auto col_indices = at::arange(weight.size(1));
 
     /// For computation of a backward path, we need to maintain both, maximum value
     /// and index of that maximum value in the weights vector.
@@ -184,18 +186,21 @@ max_quad_pool2d_backward(
     auto stat_fn = [&](const stat_op_type& op, const std::vector<Tile>& tiles) -> result_type {
         auto results = op.result_select(tiles, weight, /*missing_ok=*/true);
 
-        std::vector<torch::Tensor> weights;
-        std::transform(
-            results.begin(),
-            results.end(),
-            std::back_insert_iterator(weights),
-            [&](result_type result) -> torch::Tensor { return std::get<1>(result); }
-        );
+        std::vector<torch::Tensor> indices_vec;
+        std::vector<torch::Tensor> weights_vec;
 
-        auto [max_tensor, index] = at::max(torch::stack(weights), 0);
-        auto max_index = std::get<0>(results[index.item<int32_t>()]);
+        for (auto& result : results) {
+            indices_vec.push_back(std::get<0>(result));
+            weights_vec.push_back(std::get<1>(result));
+        }
 
-        return std::make_tuple(max_index, max_tensor);
+        auto indices = torch::stack(indices_vec);
+        auto weights = torch::stack(weights_vec);
+
+        auto [max_values, max_indices] = at::max(weights, 0);
+        indices = indices.index({max_indices.squeeze(), col_indices});
+
+        return std::make_tuple(indices, max_values);
     };
 
     stat_op_type op(
@@ -204,6 +209,7 @@ max_quad_pool2d_backward(
     );
 
     const int64_t input_size = input.size(0);
+    const int64_t weight_size = weight.size(1);
     const int64_t grain_size = at::internal::GRAIN_SIZE;
     const int64_t total_size = options.max_terminal_nodes();
 
@@ -211,15 +217,18 @@ max_quad_pool2d_backward(
     auto grad_weight = at::zeros(weight.sizes(), grad_output.options());
 
     at::parallel_for(0, total_size, grain_size, [&](int64_t begin, int64_t end) {
-        for (const auto index : c10::irange(input_size)) {
-            const auto& point = input_it[index];
+        for (const auto input_index : c10::irange(input_size)) {
+            const auto& point = input_it[input_index];
             const auto& node = op.m_set.find(point);
 
-            auto result = op.m_stat_tile_index.at(node.tile().parent());
-            auto maxindex = std::get<0>(result);
+            auto [indices, _] = op.m_stat_tile_index.at(node.tile().parent());
+            auto indices_acc = indices.accessor<int64_t, 1>();
 
-            if (maxindex >= begin && maxindex < end) {
-                grad_weight[maxindex] += grad_output[index];
+            for (const auto weight_index : c10::irange(weight_size)) {
+                auto maxindex = indices_acc[weight_index];
+                if (maxindex >= begin && maxindex < end) {
+                    grad_weight[maxindex][weight_index] += grad_output[input_index][weight_index];
+                }
             }
         }
     });

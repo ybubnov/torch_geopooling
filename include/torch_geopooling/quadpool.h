@@ -28,20 +28,19 @@ namespace torch_geopooling {
 /// Applies linear transformation over Quadtree decomposition of input 2D coordinates.
 ///
 /// This function constructs a lookup quadtree to group closely situated 2D points. Each terminal
-/// node in the resulting quadtree is paired with weight and bias. Thus when providing an input
-/// coordinate, the function retrieves the corresponding terminal node for each input coordinate
-/// and returns weight and bias.
+/// node in the resulting quadtree is paired with weight. Thus when providing an input coordinate,
+/// the function retrieves the corresponding terminal node for each input coordinate and returns
+/// weight.
 ///
 /// This function is stateless, but training could change internal quadtree, therefore it
 /// returns quadtree tiles to reconstruct the learned quadtree on the next evaluation iteration.
 ///
-/// \return tuple of tree elements: (tiles, weights, biases).
-std::tuple<torch::Tensor, torch::Tensor, torch::Tensor>
-linear_quad_pool2d(
+/// \return tuple of tree elements: (tiles, weight).
+std::tuple<torch::Tensor, torch::Tensor>
+quad_pool2d(
     const torch::Tensor& tiles,
     const torch::Tensor& input,
     const torch::Tensor& weight,
-    const torch::Tensor& bias,
     const c10::ArrayRef<double>& exterior,
     bool training = true,
     std::optional<std::size_t> max_depth = std::nullopt,

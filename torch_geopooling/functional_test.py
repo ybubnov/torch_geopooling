@@ -15,20 +15,18 @@
 
 import torch
 
-from torch_geopooling.functional import linear_quad_pool2d, max_quad_pool2d
+from torch_geopooling.functional import max_quad_pool2d, quad_pool2d
 
 
 def test_quad_pool2d() -> None:
     tiles = torch.empty((0, 3), dtype=torch.int32)
     input = torch.rand((100, 2), dtype=torch.float64) * 10.0
-    weight = torch.randn([64], dtype=torch.float64)
-    bias = torch.randn([64], dtype=torch.float64)
+    weight = torch.randn([64, 5], dtype=torch.float64)
 
-    result = linear_quad_pool2d(
+    result = quad_pool2d(
         tiles,
         input,
         weight,
-        bias,
         (0.0, 0.0, 10.0, 10.0),
         training=True,
         max_depth=16,
@@ -38,14 +36,13 @@ def test_quad_pool2d() -> None:
     assert result.tiles.size(0) > 0
     assert result.tiles.size(1) == 3
 
-    assert result.weight.size() == torch.Size([input.size(0)])
-    assert result.bias.size() == torch.Size([input.size(0)])
+    assert result.weight.size() == torch.Size([input.size(0), weight.size(1)])
 
 
 def test_max_quad_pool2d() -> None:
     tiles = torch.empty((0, 3), dtype=torch.int32)
     input = torch.rand((100, 2), dtype=torch.float64) * 10.0
-    weight = torch.randn([64], dtype=torch.float64, requires_grad=True)
+    weight = torch.randn([64, 1], dtype=torch.float64, requires_grad=True)
 
     result = max_quad_pool2d(
         tiles,
@@ -60,4 +57,4 @@ def test_max_quad_pool2d() -> None:
 
     assert result.tiles.size(0) > 0
     assert result.tiles.size(1) == 3
-    assert result.weight.size() == torch.Size([input.size(0)])
+    assert result.weight.size() == torch.Size([input.size(0), weight.size(1)])

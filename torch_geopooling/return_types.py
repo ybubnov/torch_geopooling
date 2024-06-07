@@ -18,10 +18,9 @@ from typing import NamedTuple
 from torch import Tensor
 
 
-class linear_quad_pool2d(NamedTuple):
+class quad_pool2d(NamedTuple):
     tiles: Tensor
     weight: Tensor
-    bias: Tensor
 
 
 class max_quad_pool2d(NamedTuple):

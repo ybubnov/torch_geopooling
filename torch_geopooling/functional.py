@@ -22,25 +22,24 @@ import torch_geopooling._C as _C
 from torch_geopooling import return_types
 from torch_geopooling.tiling import ExteriorTuple
 
-__all__ = ["avg_quad_pool2d", "linear_quad_pool2d", "max_quad_pool2d"]
+__all__ = ["avg_quad_pool2d", "max_quad_pool2d", "quad_pool2d"]
 
 
-def linear_quad_pool2d(
+def quad_pool2d(
     tiles: Tensor,
     input: Tensor,
     weight: Tensor,
-    bias: Tensor,
     exterior: Tuple[float, ...],
     *,
     training: bool = True,
     max_depth: Optional[int] = None,
     capacity: Optional[int] = None,
     precision: Optional[int] = None,
-) -> return_types.linear_quad_pool2d:
-    tiles, weight, bias = _C.linear_quad_pool2d(
-        tiles, input, weight, bias, exterior, training, max_depth, capacity, precision
+) -> return_types.quad_pool2d:
+    tiles, weight = _C.quad_pool2d(
+        tiles, input, weight, exterior, training, max_depth, capacity, precision
     )
-    return return_types.linear_quad_pool2d(tiles, weight, bias)
+    return return_types.quad_pool2d(tiles, weight)
 
 
 class FunctionParams(NamedTuple):

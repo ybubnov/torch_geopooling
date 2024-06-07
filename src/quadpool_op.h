@@ -206,31 +206,6 @@ struct quadpool_op
         return torch::stack(tile_rows);
     }
 
-    std::tuple<torch::Tensor, torch::Tensor>
-    forward(
-        tensor_reference index,
-        tensor_reference weight,
-        tensor_reference bias
-    ) const
-    {
-        check_weight_and_bias(weight, bias);
-
-        torch::Tensor weight_out = at::index_select(weight, 0, index);
-        torch::Tensor bias_out = at::index_select(bias, 0, index);
-
-        return std::make_tuple(weight_out, bias_out);
-    }
-
-    std::tuple<torch::Tensor, torch::Tensor>
-    forward(
-        const std::vector<Index>& index,
-        tensor_reference weight,
-        tensor_reference bias
-    ) const
-    {
-        return forward(torch::tensor(index), weight, bias);
-    }
-
     torch::Tensor
     weight_select(tensor_reference index, tensor_reference weight) const
     {
@@ -251,11 +226,12 @@ struct quadpool_op
         return weight_select(index, weight);
     }
 
-    std::tuple<Index, torch::Tensor>
+    std::tuple<torch::Tensor, torch::Tensor>
     weight_index(const Tile& tile, tensor_reference weight) const
     {
         std::vector<Index> index({m_tile_index.at(tile)});
-        return std::make_tuple(index[0], weight_select(index, weight));
+        torch::Tensor tile_index = torch::tensor(index);
+        return std::make_tuple(tile_index.repeat(weight.size(1)), weight_select(index, weight));
     }
 
 private:
@@ -309,23 +285,8 @@ private:
     check_weight(tensor_reference weight) const
     {
         TORCH_CHECK(
-            weight.dim() == 1,
-            m_op, ": operation only supports 1D weight, got ", weight.dim(), "D"
-        );
-    }
-
-    void
-    check_weight_and_bias(tensor_reference weight, tensor_reference bias) const
-    {
-        check_weight(weight);
-
-        TORCH_CHECK(
-            bias.dim() == 1,
-            m_op, ": operation only supports 1D bias, got ", bias.dim(), "D"
-        );
-        TORCH_CHECK(
-            weight.sizes() == bias.sizes(),
-            m_op, ": weight (", weight.sizes(), ") and bias (", bias.sizes(), ") are differ in size"
+            weight.dim() == 2,
+            m_op, ": operation only supports 2D weight, got ", weight.dim(), "D"
         );
     }
 };
