@@ -98,7 +98,6 @@ max_quad_pool2d_backward(
 );
 
 
-/*
 std::tuple<torch::Tensor, torch::Tensor>
 avg_quad_pool2d(
     const torch::Tensor& tiles,
@@ -110,7 +109,6 @@ avg_quad_pool2d(
     std::optional<std::size_t> capacity = std::nullopt,
     std::optional<std::size_t> precision = std::nullopt
 );
-*/
 
 
 } // namespace torch_geopooling
