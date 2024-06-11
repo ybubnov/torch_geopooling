@@ -13,11 +13,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import pytest
 import torch
 from shapely.geometry import Polygon
 from torch.nn import L1Loss
 
-from torch_geopooling.nn import AdaptiveMaxQuadPool2d, AdaptiveQuadPool2d, MaxQuadPool2d
+from torch_geopooling.nn import AdaptiveMaxQuadPool2d, AdaptiveQuadPool2d, MaxQuadPool2d, QuadPool2d
 
 
 def test_adaptive_quad_pool2d_gradient() -> None:
@@ -49,6 +50,26 @@ def test_adaptive_max_quad_pool2d_gradient() -> None:
     loss.backward()
 
     assert max_pool.weight.grad is not None
+
+
+def test_quad_pool2d_gradient() -> None:
+    poly = Polygon([(0.0, 0.0), (1.0, 0.0), (1.0, 1.1), (0.0, 1.0)])
+    exterior = (0.0, 0.0, 1.0, 1.0)
+
+    max_pool = QuadPool2d(3, poly, exterior, max_depth=5)
+    assert max_pool.num_features == 1 << 10
+
+    input = torch.rand((100, 2), dtype=torch.float64)
+    y = max_pool(input)
+
+    assert max_pool.weight.grad is None
+
+    loss_fn = L1Loss()
+    loss = loss_fn(y, torch.ones_like(y))
+    loss.backward()
+
+    assert max_pool.weight.grad is not None
+    assert max_pool.weight.grad.sum().item() == pytest.approx(-1)
 
 
 def test_max_quad_pool2d_gradient() -> None:

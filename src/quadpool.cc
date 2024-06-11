@@ -82,6 +82,49 @@ quad_pool2d(
 }
 
 
+torch::Tensor
+quad_pool2d_backward(
+    const torch::Tensor& grad_output,
+    const torch::Tensor& tiles,
+    const torch::Tensor& input,
+    const torch::Tensor& weight,
+    const c10::ArrayRef<double>& exterior,
+    std::optional<std::size_t> max_depth,
+    std::optional<std::size_t> capacity,
+    std::optional<std::size_t> precision
+)
+{
+    auto options = quadtree_options()
+        .max_terminal_nodes(weight.size(0))
+        .max_depth(max_depth)
+        .precision(precision)
+        .capacity(capacity);
+
+    quadpool_op op("quad_pool2d_backward", tiles, input, exterior, options, /*training=*/false);
+
+    const int64_t input_size = input.size(0);
+    const int64_t total_size = options.max_terminal_nodes();
+    const int64_t grain_size = at::internal::GRAIN_SIZE;
+
+    auto input_it = op.make_input_iterator(input);
+    auto grad_weight = at::zeros(weight.sizes(), grad_output.options());
+
+    at::parallel_for(0, total_size, grain_size, [&](int64_t begin, int64_t end) {
+        for (const auto input_index : c10::irange(input_size)) {
+            const auto& point = input_it[input_index];
+            const auto& node = op.m_set.find(point);
+
+            auto index = op.m_tile_index.at(node.tile());
+            if (index >= begin && index < end) {
+                grad_weight[index] += grad_output[input_index];
+            }
+        }
+    });
+
+    return grad_weight;
+}
+
+
 std::tuple<torch::Tensor, torch::Tensor>
 max_quad_pool2d(
     const torch::Tensor& tiles,
