@@ -280,7 +280,6 @@ max_quad_pool2d_backward(
 }
 
 
-/*
 std::tuple<torch::Tensor, torch::Tensor>
 avg_quad_pool2d(
     const torch::Tensor& tiles,
@@ -299,12 +298,23 @@ avg_quad_pool2d(
         .precision(precision)
         .capacity(capacity);
 
-    auto avg_fn = [](const torch::Tensor& t) -> torch::Tensor {
-        return at::unsqueeze(at::mean(t), 0);
+    using coordinate_type = double;
+    using index_type = int32_t;
+    using result_type = torch::Tensor;
+
+    using init_operation_reference = const quadpool_op<coordinate_type, index_type>&;
+    using stat_operation_reference = const quadpool_stat_op<coordinate_type, index_type, result_type>&;
+
+    auto init_fn = [&](init_operation_reference op, const Tile& tile) -> result_type {
+        return op.weight_select(tile, weight);
+    };
+    auto stat_fn = [&](stat_operation_reference op, const std::vector<Tile>& tiles) -> result_type {
+        auto weights = torch::stack(op.result_select(tiles, weight, /*missing_ok=*/true));
+        return at::mean(weights, 0);
     };
 
-    quadpool_stat_op op(
-        "avg_quad_pool2d", avg_fn, tiles, input, weight, exterior, options, training
+    quadpool_stat_op<coordinate_type, index_type, result_type> op(
+        "avg_quad_pool2d", init_fn, stat_fn, tiles, input, exterior, options, training
     );
 
     const int64_t grain_size = at::internal::GRAIN_SIZE;
@@ -330,7 +340,6 @@ avg_quad_pool2d(
 
     return std::make_tuple(tiles_out, weight_out);
 }
-*/
 
 
 } // namespace torch_geopooling

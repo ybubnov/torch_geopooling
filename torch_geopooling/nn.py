@@ -25,6 +25,7 @@ from torch_geopooling.tiling import Exterior, ExteriorTuple, regular_tiling
 __all__ = [
     "AdaptiveQuadPool2d",
     "AdaptiveMaxQuadPool2d",
+    "AvgQuadPool2d",
     "MaxQuadPool2d",
     "QuadPool2d",
 ]
@@ -227,6 +228,20 @@ class QuadPool2d(_QuadPool):
 class MaxQuadPool2d(_QuadPool):
     def forward(self, input: Tensor) -> Tensor:
         result = F.max_quad_pool2d(
+            self.tiles,
+            input,
+            self.weight,
+            self.exterior,
+            training=False,
+            max_depth=self.max_depth,
+            precision=self.precision,
+        )
+        return result.weight
+
+
+class AvgQuadPool2d(_QuadPool):
+    def forward(self, input: Tensor) -> Tensor:
+        result = F.avg_quad_pool2d(
             self.tiles,
             input,
             self.weight,
