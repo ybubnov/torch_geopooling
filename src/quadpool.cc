@@ -300,17 +300,29 @@ avg_quad_pool2d(
 
     using coordinate_type = double;
     using index_type = int32_t;
-    using result_type = torch::Tensor;
+    using result_type = std::tuple<torch::Tensor, torch::Tensor>;
 
     using init_operation_reference = const quadpool_op<coordinate_type, index_type>&;
     using stat_operation_reference = const quadpool_stat_op<coordinate_type, index_type, result_type>&;
 
+    std::vector<int64_t> stat_size = {1, weight.size(1)};
+
     auto init_fn = [&](init_operation_reference op, const Tile& tile) -> result_type {
-        return op.weight_select(tile, weight);
+        auto sum = op.weight_select(tile, weight);
+        auto count = torch::ones(stat_size, weight.options());
+        return std::make_tuple(sum, count);
     };
     auto stat_fn = [&](stat_operation_reference op, const std::vector<Tile>& tiles) -> result_type {
-        auto weights = torch::stack(op.result_select(tiles, weight, /*missing_ok=*/true));
-        return at::mean(weights, 0);
+        auto results = op.result_select(tiles, weight, /*missing_ok=*/true);
+
+        auto sum = torch::zeros(stat_size, weight.options());
+        auto count = torch::zeros(stat_size, weight.options());
+
+        for (auto& result: results) {
+            sum += std::get<0>(result);
+            count += std::get<1>(result);
+        }
+        return std::make_tuple(sum, count);
     };
 
     quadpool_stat_op<coordinate_type, index_type, result_type> op(
@@ -331,7 +343,7 @@ avg_quad_pool2d(
             auto node = op.m_set.find(point);
             auto stat = op.m_stat_tile_index.at(node.tile().parent());
 
-            weight_out_vec[i] = stat;
+            weight_out_vec[i] = std::get<0>(stat) / std::get<1>(stat);
         }
     });
 
