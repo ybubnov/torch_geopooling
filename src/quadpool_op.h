@@ -166,8 +166,10 @@ struct quadpool_op
     )
     : quadpool_op(op, tiles_iterator(check_tiles(tiles)), exterior, options, training)
     {
+        check_input(input);
+
         if (training) {
-            input_iterator input_it(check_input(input));
+            input_iterator input_it(input);
             m_set.insert(input_it.begin(), input_it.end());
         }
 

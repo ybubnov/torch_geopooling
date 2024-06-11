@@ -49,6 +49,19 @@ quad_pool2d(
 );
 
 
+torch::Tensor
+quad_pool2d_backward(
+    const torch::Tensor& grad_output,
+    const torch::Tensor& tiles,
+    const torch::Tensor& input,
+    const torch::Tensor& weight,
+    const c10::ArrayRef<double>& exterior,
+    std::optional<std::size_t> max_depth = std::nullopt,
+    std::optional<std::size_t> capacity = std::nullopt,
+    std::optional<std::size_t> precision = std::nullopt
+);
+
+
 /// Dynamic maximum pooling over Quadtree decomposition of input 2D coordinates.
 ///
 /// This function constructs an internal lookup quadtree to organize closely situated 2D points.
