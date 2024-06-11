@@ -131,17 +131,17 @@ def max_quad_pool2d(
 
 
 def avg_quad_pool2d(
-   tiles: Tensor,
-   input: Tensor,
-   weight: Tensor,
-   exterior: Tuple[float, ...],
-   *,
-   training: bool = True,
-   max_depth: Optional[int] = None,
-   capacity: Optional[int] = None,
-   precision: Optional[int] = None,
+    tiles: Tensor,
+    input: Tensor,
+    weight: Tensor,
+    exterior: Tuple[float, ...],
+    *,
+    training: bool = True,
+    max_depth: Optional[int] = None,
+    capacity: Optional[int] = None,
+    precision: Optional[int] = None,
 ) -> return_types.avg_quad_pool2d:
-   tiles, weight = _C.avg_quad_pool2d(
-       tiles, input, weight, exterior, training, max_depth, capacity, precision
-   )
-   return return_types.avg_quad_pool2d(tiles, weight)
+    tiles, weight = _C.avg_quad_pool2d(
+        tiles, input, weight, exterior, training, max_depth, capacity, precision
+    )
+    return return_types.avg_quad_pool2d(tiles, weight)

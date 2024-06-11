@@ -89,4 +89,4 @@ def test_max_quad_pool2d_gradient() -> None:
     loss.backward()
 
     assert max_pool.weight.grad is not None
-    assert max_pool.weight.grad.sum() == -1
+    assert max_pool.weight.grad.sum() == pytest.approx(-1)
