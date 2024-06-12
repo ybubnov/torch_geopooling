@@ -101,12 +101,11 @@ BOOST_AUTO_TEST_CASE(max_quad_pool2d_backward_grad)
 
     auto grad_weight_acc = grad_weight.accessor<double, 2>();
     BOOST_CHECK_EQUAL(grad_weight_acc[0][0], 32.0); // 10.0 + 22.0
-    BOOST_CHECK_EQUAL(grad_weight_acc[1][0], 30.0); // 30.0
-
     BOOST_CHECK_EQUAL(grad_weight_acc[0][1], 3.2); // 1.0 + 2.2
-    BOOST_CHECK_EQUAL(grad_weight_acc[1][1], 3.0); // 3.0
-
     BOOST_CHECK_EQUAL(grad_weight_acc[0][2], 320.0); // 100.0 + 220.0
+
+    BOOST_CHECK_EQUAL(grad_weight_acc[1][0], 30.0); // 30.0
+    BOOST_CHECK_EQUAL(grad_weight_acc[1][1], 3.0); // 3.0
     BOOST_CHECK_EQUAL(grad_weight_acc[1][2], 300.0); // 300.0
 }
 

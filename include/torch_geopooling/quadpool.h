@@ -111,4 +111,16 @@ avg_quad_pool2d(
 );
 
 
+torch::Tensor
+avg_quad_pool2d_backward(
+    const torch::Tensor& grad_output,
+    const torch::Tensor& tiles,
+    const torch::Tensor& input,
+    const torch::Tensor& weight,
+    const c10::ArrayRef<double>& exterior,
+    std::optional<std::size_t> max_depth = std::nullopt,
+    std::optional<std::size_t> capacity = std::nullopt,
+    std::optional<std::size_t> precision = std::nullopt
+);
+
 } // namespace torch_geopooling

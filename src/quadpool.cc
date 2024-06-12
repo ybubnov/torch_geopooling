@@ -318,7 +318,7 @@ avg_quad_pool2d(
         auto sum = torch::zeros(stat_size, weight.options());
         auto count = torch::zeros(stat_size, weight.options());
 
-        for (auto& result: results) {
+        for (const auto& result : results) {
             sum += std::get<0>(result);
             count += std::get<1>(result);
         }
@@ -353,5 +353,82 @@ avg_quad_pool2d(
     return std::make_tuple(tiles_out, weight_out);
 }
 
+
+torch::Tensor
+avg_quad_pool2d_backward(
+    const torch::Tensor& grad_output,
+    const torch::Tensor& tiles,
+    const torch::Tensor& input,
+    const torch::Tensor& weight,
+    const c10::ArrayRef<double>& exterior,
+    std::optional<std::size_t> max_depth,
+    std::optional<std::size_t> capacity,
+    std::optional<std::size_t> precision
+)
+{
+    auto options = quadtree_options()
+        .max_terminal_nodes(weight.size(0))
+        .max_depth(max_depth)
+        .precision(precision)
+        .capacity(capacity);
+
+    using coordinate_type = double;
+    using index_type = int32_t;
+    using result_type = torch::Tensor;
+
+    using init_op_type = quadpool_op<coordinate_type, index_type>;
+    using stat_op_type = quadpool_stat_op<coordinate_type, index_type, result_type>;
+
+    const auto stat_indices = at::arange(weight.size(1));
+    std::vector<int64_t> stat_size = {weight.size(1)};
+
+    auto init_fn = [&](const init_op_type& op, const Tile& tile) -> result_type {
+        return torch::ones(stat_size, weight.options());
+    };
+    auto stat_fn = [&](const stat_op_type& op, const std::vector<Tile>& tiles) -> result_type {
+        auto results = op.result_select(tiles, weight, /*missing_ok=*/true);
+        auto count = torch::zeros(stat_size, weight.options());
+
+        for (const auto& result : results) {
+            count += result;
+        }
+        return count;
+    };
+
+    stat_op_type op(
+        "avg_quad_pool2d_backward",
+        init_fn, stat_fn, tiles, input, exterior, options, /*training=*/false
+    );
+
+    const int64_t input_size = input.size(0);
+    const int64_t weight_size = weight.size(1);
+    const int64_t grain_size = at::internal::GRAIN_SIZE;
+    const int64_t total_size = options.max_terminal_nodes();
+
+    auto input_it = op.make_input_iterator(input);
+    auto grad_weight = at::zeros(weight.sizes(), grad_output.options());
+
+    at::parallel_for(0, total_size, grain_size, [&](int64_t begin, int64_t end) {
+        for (const auto input_index : c10::irange(input_size)) {
+            const auto& point = input_it[input_index];
+            const auto& node = op.m_set.find(point);
+
+            auto count = op.m_stat_tile_index.at(node.tile().parent());
+
+            for (
+                auto node = op.m_set.find_terminal_group(point);
+                node != op.m_set.end();
+                ++node
+            ) {
+                auto index = op.m_tile_index.at(node->tile());
+                if (index >= begin && index < end) {
+                    grad_weight[index] += grad_output[input_index] / count;
+                }
+            }
+        }
+    });
+
+    return grad_weight;
+}
 
 } // namespace torch_geopooling

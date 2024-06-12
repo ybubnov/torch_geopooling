@@ -161,7 +161,8 @@ public:
 
     template<typename InputIt>
     void
-    insert(InputIt first, InputIt last) {
+    insert(InputIt first, InputIt last)
+    {
         while (first != last) {
             insert(*first);
             ++first;
