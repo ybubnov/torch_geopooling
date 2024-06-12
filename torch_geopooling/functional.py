@@ -130,6 +130,11 @@ def max_quad_pool2d(
     return return_types.max_quad_pool2d(*result)
 
 
+class AvgQuadPool2d(Function):
+    forward_impl = _C.avg_quad_pool2d
+    backward_impl = _C.avg_quad_pool2d_backward
+
+
 def avg_quad_pool2d(
     tiles: Tensor,
     input: Tensor,
@@ -141,7 +146,6 @@ def avg_quad_pool2d(
     capacity: Optional[int] = None,
     precision: Optional[int] = None,
 ) -> return_types.avg_quad_pool2d:
-    tiles, weight = _C.avg_quad_pool2d(
-        tiles, input, weight, exterior, training, max_depth, capacity, precision
-    )
-    return return_types.avg_quad_pool2d(tiles, weight)
+    params = FunctionParams(max_depth=max_depth, capacity=capacity, precision=precision)
+    result = AvgQuadPool2d.apply(tiles, input, weight, exterior, training, params)
+    return return_types.avg_quad_pool2d(*result)

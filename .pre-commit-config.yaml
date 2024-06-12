@@ -5,11 +5,6 @@ repos:
     -   id: end-of-file-fixer
     -   id: trailing-whitespace
     -   id: debug-statements
--   repo: https://github.com/pycqa/isort
-    rev: 5.12.0
-    hooks:
-    -   id: isort
-        name: "Re-order Python imports"
 - repo: https://github.com/astral-sh/ruff-pre-commit
   rev: v0.4.2
   hooks:
