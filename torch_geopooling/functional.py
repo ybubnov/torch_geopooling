@@ -85,7 +85,7 @@ class Function(autograd.Function):
     ) -> Tuple[Optional[Tensor], ...]:
         grad_weight = cls.backward_impl(grad_output, *ctx.saved_tensors, ctx.exterior, *ctx.params)  # type: ignore
         # Drop gradient for tiles, this should not be changed by an optimizer.
-        return grad_tiles, None, grad_weight, None, None, None
+        return None, None, grad_weight, None, None, None
 
 
 class QuadPool2d(Function):
