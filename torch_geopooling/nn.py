@@ -82,24 +82,23 @@ class AdaptiveQuadPool2d(_AdaptiveQuadPool):
     an input coordinate, the module retrieves the corresponding terminal node and returns its
     associated weight.
 
-    Args:
-        num_features: Number of features. Equals to the number of terminal nodes in the quadtree.
-        feature_dim: Size of each feature vector.
-        exterior: Geometrical boundary of the learning space in (X, Y, W, H) format.
-        max_depth: Maximum depth of the quadtree. Default: 17.
-        capacity: Maximum number of inputs, after which a quadtree's node is subdivided and
-            depth of the tree grows. Default: 1.
-        precision: Optional rounding of the input coordinates. Default: 7.
+    :param num_features: Number of features. Equals to the number of terminal nodes in the quadtree.
+    :param feature_dim: Size of each feature vector.
+    :param exterior: Geometrical boundary of the learning space in (X, Y, W, H) format.
+    :param max_depth: Maximum depth of the quadtree. Default: 17.
+    :param capacity: Maximum number of inputs, after which a quadtree's node is subdivided and
+        depth of the tree grows. Default: 1.
+    :param precision: Optional rounding of the input coordinates. Default: 7.
 
     Examples:
 
-        >>> # 48 feature vectors of size 4 over a 2d space.
-        >>> pool = nn.LinearQuadPool2d(48, 4, (-10, -5, 20, 10))
-        >>> # Grow tree up to 4-th level and sub-divides a node after 8 coordinates in a quad.
-        >>> pool = nn.LinearQuadPool2d(48, 4, (-10, -5, 20, 10), max_depth=4, capacity=8)
-        >>> # Create 2D coordinates and query associated weights.
-        >>> input = torch.rand((1024, 2), dtype=torch.float64) * 10 - 5
-        >>> output = pool(input)
+    >>> # 48 feature vectors of size 4 over a 2d space.
+    >>> pool = nn.AdaptiveQuadPool2d(48, 4, (-10, -5, 20, 10))
+    >>> # Grow tree up to 4-th level and sub-divides a node after 8 coordinates in a quad.
+    >>> pool = nn.AdaptiveQuadPool2d(48, 4, (-10, -5, 20, 10), max_depth=4, capacity=8)
+    >>> # Create 2D coordinates and query associated weights.
+    >>> input = torch.rand((1024, 2), dtype=torch.float64) * 10 - 5
+    >>> output = pool(input)
     """
 
     def forward(self, input: Tensor) -> Tensor:
