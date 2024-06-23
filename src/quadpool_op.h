@@ -205,12 +205,12 @@ struct quadpool_op
         if (m_training) {
             auto input_it = input_iterator(input);
 
-            m_set.insert(input_it.begin(), input_it.end(), [&](const Tile parent_tile, const Tile child_tile) {
+            m_set.insert(input_it.begin(), input_it.end(), [&](Tile parent_tile, Tile child_tile) {
                 auto value = m_values.at(parent_tile);
                 int64_t index = m_indices.size();
 
-                m_values.insert(std::make_pair(child_tile, value));
-                m_indices.insert(std::make_tuple(child_tile, index));
+                m_values.insert(std::make_pair(Tile(child_tile), value));
+                m_indices.insert(std::make_tuple(Tile(child_tile), index));
             });
 
             // After the modification of a tree, update the final tiles and weights.

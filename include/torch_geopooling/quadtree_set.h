@@ -39,7 +39,7 @@ public:
 
     using iterator = quadtree_set_iterator<Coordinate>;
 
-    using callback_type = std::function<void(const Tile, const Tile)>;
+    using callback_type = std::function<void(Tile, Tile)>;
 
     quadtree_set(
         const exterior_type& exterior,
