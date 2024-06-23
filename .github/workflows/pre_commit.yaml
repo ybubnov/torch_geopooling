@@ -15,7 +15,9 @@ jobs:
         with:
           python-version: '3.11'
       - name: Install pre-commit tools
-        run: apt install clang-format
+        run: |
+          sudo apt-get update
+          sudo apt-get install clang-format --no-install-recommendations -y
       - name: Install pre-commit
         run: pip install pre-commit
       - name: Run pre-commit
