@@ -37,38 +37,32 @@ _Exterior = Union[Exterior, ExteriorTuple]
 class _AdaptiveQuadPool(nn.Module):
     def __init__(
         self,
-        num_features: int,
         feature_dim: int,
         exterior: _Exterior,
+        max_terminal_nodes: Optional[int] = None,
         max_depth: int = 17,
         capacity: int = 1,
         precision: Optional[int] = 7,
     ) -> None:
         super().__init__()
-        self.num_features = num_features
         self.feature_dim = feature_dim
         self.exterior = tuple(map(float, exterior))
+        self.max_terminal_nodes = max_terminal_nodes
         self.max_depth = max_depth
         self.capacity = capacity
         self.precision = precision
 
         self.initialize_parameters()
-        self.reset_parameters()
 
     def initialize_parameters(self) -> None:
-        weight_size = [self.num_features, self.feature_dim]
-        self.weight = nn.Parameter(torch.empty(weight_size, dtype=torch.float64))
-
-        self.register_buffer("tiles", torch.empty((0, 3), dtype=torch.int32))
-        self.tiles: Tensor
-
-    def reset_parameters(self) -> None:
-        nn.init.uniform_(self.weight)
-        self.tiles.new_empty((0, 3))
+        # The weight for adaptive operation should be sparse, since training operation
+        # results in a dynamic change of the underlying quadtree.
+        weight_size = (self.max_depth, 1 << self.max_depth, 1 << self.max_depth, self.feature_dim)
+        self.weight = nn.Parameter(torch.sparse_coo_tensor(size=weight_size, dtype=torch.float64))
 
     def extra_repr(self) -> str:
         return (
-            "{num_features}, {feature_dim}, "
+            "{feature_dim}, "
             "exterior={exterior}, capacity={capacity}, max_depth={max_depth}, "
             "precision={precision}".format(**self.__dict__)
         )
@@ -82,7 +76,6 @@ class AdaptiveQuadPool2d(_AdaptiveQuadPool):
     an input coordinate, the module retrieves the corresponding terminal node and returns its
     associated weight.
 
-    :param num_features: Number of features. Equals to the number of terminal nodes in the quadtree.
     :param feature_dim: Size of each feature vector.
     :param exterior: Geometrical boundary of the learning space in (X, Y, W, H) format.
     :param max_depth: Maximum depth of the quadtree. Default: 17.
@@ -92,29 +85,29 @@ class AdaptiveQuadPool2d(_AdaptiveQuadPool):
 
     Examples:
 
-    >>> # 48 feature vectors of size 4 over a 2d space.
-    >>> pool = nn.AdaptiveQuadPool2d(48, 4, (-10, -5, 20, 10))
+    >>> # Feature vectors of size 4 over a 2d space.
+    >>> pool = nn.AdaptiveQuadPool2d(4, (-10, -5, 20, 10))
     >>> # Grow tree up to 4-th level and sub-divides a node after 8 coordinates in a quad.
-    >>> pool = nn.AdaptiveQuadPool2d(48, 4, (-10, -5, 20, 10), max_depth=4, capacity=8)
+    >>> pool = nn.AdaptiveQuadPool2d(4, (-10, -5, 20, 10), max_depth=4, capacity=8)
     >>> # Create 2D coordinates and query associated weights.
     >>> input = torch.rand((1024, 2), dtype=torch.float64) * 10 - 5
     >>> output = pool(input)
     """
 
     def forward(self, input: Tensor) -> Tensor:
-        result = F.quad_pool2d(
-            self.tiles,
-            input,
+        result = F.adaptive_quad_pool2d(
             self.weight,
+            input,
             self.exterior,
             training=self.training,
+            max_terminal_nodes=self.max_terminal_nodes,
             max_depth=self.max_depth,
             capacity=self.capacity,
             precision=self.precision,
         )
         if self.training:
-            self.tiles = result.tiles
-        return result.weight
+            self.weight.data = result.weight
+        return result.values
 
 
 class AdaptiveMaxQuadPool2d(_AdaptiveQuadPool):
@@ -128,37 +121,52 @@ class AdaptiveMaxQuadPool2d(_AdaptiveQuadPool):
     A terminal group refers to a collection of terminal nodes within the quadtree that share the
     same parent as the input coordinate.
 
-    Args:
-        num_features: Number of features, or terminal nodes, in the Quadtree decomposition.
-        feature_dim: Size of each feature vector.
-        exterior: Geometrical boundary of the learning space in (X, Y, W, H) format.
-        max_depth: Maximum depth of the quadtree. Default: 17.
-        capacity: Maximum number of inputs, after which a quadtree's node is subdivided and
-            depth of the tree grows. Default: 1.
-        precision: Optional rounding of the input coordinates. Default: 7.
+    :param feature_dim: Size of each feature vector.
+    :param exterior: Geometrical boundary of the learning space in (X, Y, W, H) format.
+    :param max_depth: Maximum depth of the quadtree. Default: 17.
+    :param capacity: Maximum number of inputs, after which a quadtree's node is subdivided and
+        depth of the tree grows. Default: 1.
+    :param precision: Optional rounding of the input coordinates. Default: 7.
 
     Examples:
 
-        >>> pool = nn.MaxQuadPool2d(256, 3, (-10, -5, 20, 10), max_depth=5)
+        >>> pool = nn.AdaptiveMaxQuadPool2d(3, (-10, -5, 20, 10), max_depth=5)
         >>> # Create 2D coordinates and feature vector associated with them.
         >>> input = torch.rand((2048, 2), dtype=torch.float64) * 10 - 5
         >>> output = pool(input)
     """
 
     def forward(self, input: Tensor) -> Tensor:
-        result = F.max_quad_pool2d(
-            self.tiles,
-            input,
+        result = F.adaptive_max_quad_pool2d(
             self.weight,
+            input,
             self.exterior,
             training=self.training,
+            max_terminal_nodes=self.max_terminal_nodes,
             max_depth=self.max_depth,
             capacity=self.capacity,
             precision=self.precision,
         )
         if self.training:
-            self.tiles = result.tiles
-        return result.weight
+            self.weight.data = result.weight
+        return result.values
+
+
+class AdaptiveAvgQuadPool2d(_AdaptiveQuadPool):
+    def forward(self, input: Tensor) -> Tensor:
+        result = F.adaptive_avg_quad_pool2d(
+            self.weight,
+            input,
+            self.exterior,
+            training=self.training,
+            max_terminal_nodes=self.max_terminal_nodes,
+            max_depth=self.max_depth,
+            capacity=self.capacity,
+            precision=self.precision,
+        )
+        if self.training:
+            self.weight.data = result.weight
+        return result.values
 
 
 class _QuadPool(nn.Module):
@@ -167,6 +175,7 @@ class _QuadPool(nn.Module):
         feature_dim: int,
         polygon: Polygon,
         exterior: _Exterior,
+        max_terminal_nodes: Optional[int] = None,
         max_depth: int = 17,
         precision: Optional[int] = 7,
     ) -> None:
@@ -174,6 +183,7 @@ class _QuadPool(nn.Module):
         self.feature_dim = feature_dim
         self.polygon = polygon
         self.exterior = tuple(map(float, exterior))
+        self.max_terminal_nodes = max_terminal_nodes
         self.max_depth = max_depth
         self.precision = precision
 
@@ -182,7 +192,7 @@ class _QuadPool(nn.Module):
         tiles_iter = regular_tiling(
             polygon, Exterior.from_tuple(exterior), z=max_depth, internal=True
         )
-        tiles = torch.tensor(list(tiles_iter), dtype=torch.int32)
+        tiles = torch.tensor(list(tiles_iter), dtype=torch.int64)
 
         self.register_buffer("tiles", tiles)
         self.tiles: Tensor
@@ -190,12 +200,8 @@ class _QuadPool(nn.Module):
         self.initialize_parameters()
         self.reset_parameters()
 
-    @property
-    def num_features(self) -> int:
-        return (self.tiles[:, 0] == self.max_depth).sum().item()
-
     def initialize_parameters(self) -> None:
-        weight_size = [self.num_features, self.feature_dim]
+        weight_size = [self.tiles.size(0), self.feature_dim]
         self.weight = nn.Parameter(torch.empty(weight_size, dtype=torch.float64))
 
     def reset_parameters(self) -> None:
@@ -212,41 +218,44 @@ class QuadPool2d(_QuadPool):
     def forward(self, input: Tensor) -> Tensor:
         result = F.quad_pool2d(
             self.tiles,
-            input,
             self.weight,
+            input,
             self.exterior,
             # This is not a mistake, since we already know the shape of the
             # quadtree, there is no need to learn it.
             training=False,
+            max_terminal_nodes=self.max_terminal_nodes,
             max_depth=self.max_depth,
             precision=self.precision,
         )
-        return result.weight
+        return result.values
 
 
 class MaxQuadPool2d(_QuadPool):
     def forward(self, input: Tensor) -> Tensor:
         result = F.max_quad_pool2d(
             self.tiles,
-            input,
             self.weight,
+            input,
             self.exterior,
             training=False,
+            max_terminal_nodes=self.max_terminal_nodes,
             max_depth=self.max_depth,
             precision=self.precision,
         )
-        return result.weight
+        return result.values
 
 
 class AvgQuadPool2d(_QuadPool):
     def forward(self, input: Tensor) -> Tensor:
         result = F.avg_quad_pool2d(
             self.tiles,
-            input,
             self.weight,
+            input,
             self.exterior,
             training=False,
+            max_terminal_nodes=self.max_terminal_nodes,
             max_depth=self.max_depth,
             precision=self.precision,
         )
-        return result.weight
+        return result.values

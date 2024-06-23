@@ -35,14 +35,15 @@ namespace torch_geopooling {
 /// This function is stateless, but training could change internal quadtree, therefore it
 /// returns quadtree tiles to reconstruct the learned quadtree on the next evaluation iteration.
 ///
-/// \return tuple of tree elements: (tiles, weight).
-std::tuple<torch::Tensor, torch::Tensor>
+/// \return tuple of tree elements: (tiles, weight, values).
+std::tuple<torch::Tensor, torch::Tensor, torch::Tensor>
 quad_pool2d(
     const torch::Tensor& tiles,
-    const torch::Tensor& input,
     const torch::Tensor& weight,
+    const torch::Tensor& input,
     const c10::ArrayRef<double>& exterior,
-    bool training = true,
+    bool training = false,
+    std::optional<std::size_t> max_terminal_nodes = std::nullopt,
     std::optional<std::size_t> max_depth = std::nullopt,
     std::optional<std::size_t> capacity = std::nullopt,
     std::optional<std::size_t> precision = std::nullopt
@@ -53,9 +54,10 @@ torch::Tensor
 quad_pool2d_backward(
     const torch::Tensor& grad_output,
     const torch::Tensor& tiles,
-    const torch::Tensor& input,
     const torch::Tensor& weight,
+    const torch::Tensor& input,
     const c10::ArrayRef<double>& exterior,
+    std::optional<std::size_t> max_terminal_nodes = std::nullopt,
     std::optional<std::size_t> max_depth = std::nullopt,
     std::optional<std::size_t> capacity = std::nullopt,
     std::optional<std::size_t> precision = std::nullopt
@@ -72,13 +74,14 @@ quad_pool2d_backward(
 /// Terminal node group is a set of nodes in a lookup quadtree that share the common parent.
 ///
 /// \return tuple of two elements: (tiles, weights).
-std::tuple<torch::Tensor, torch::Tensor>
+std::tuple<torch::Tensor, torch::Tensor, torch::Tensor>
 max_quad_pool2d(
     const torch::Tensor& tiles,
-    const torch::Tensor& input,
     const torch::Tensor& weight,
+    const torch::Tensor& input,
     const c10::ArrayRef<double>& exterior,
-    bool training = true,
+    bool training = false,
+    std::optional<std::size_t> max_terminal_nodes = std::nullopt,
     std::optional<std::size_t> max_depth = std::nullopt,
     std::optional<std::size_t> capacity = std::nullopt,
     std::optional<std::size_t> precision = std::nullopt
@@ -89,22 +92,24 @@ torch::Tensor
 max_quad_pool2d_backward(
     const torch::Tensor& grad_output,
     const torch::Tensor& tiles,
-    const torch::Tensor& input,
     const torch::Tensor& weight,
+    const torch::Tensor& input,
     const c10::ArrayRef<double>& exterior,
+    std::optional<std::size_t> max_terminal_nodes = std::nullopt,
     std::optional<std::size_t> max_depth = std::nullopt,
     std::optional<std::size_t> capacity = std::nullopt,
     std::optional<std::size_t> precision = std::nullopt
 );
 
 
-std::tuple<torch::Tensor, torch::Tensor>
+std::tuple<torch::Tensor, torch::Tensor, torch::Tensor>
 avg_quad_pool2d(
     const torch::Tensor& tiles,
-    const torch::Tensor& input,
     const torch::Tensor& weight,
+    const torch::Tensor& input,
     const c10::ArrayRef<double>& exterior,
-    bool training = true,
+    bool training = false,
+    std::optional<std::size_t> max_terminal_nodes = std::nullopt,
     std::optional<std::size_t> max_depth = std::nullopt,
     std::optional<std::size_t> capacity = std::nullopt,
     std::optional<std::size_t> precision = std::nullopt
@@ -118,6 +123,7 @@ avg_quad_pool2d_backward(
     const torch::Tensor& input,
     const torch::Tensor& weight,
     const c10::ArrayRef<double>& exterior,
+    std::optional<std::size_t> max_terminal_nodes = std::nullopt,
     std::optional<std::size_t> max_depth = std::nullopt,
     std::optional<std::size_t> capacity = std::nullopt,
     std::optional<std::size_t> precision = std::nullopt

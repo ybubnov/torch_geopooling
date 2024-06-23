@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <initializer_list>
 #include <iterator>
 #include <limits>
@@ -37,6 +38,8 @@ public:
     using container_type = std::unordered_map<Tile, node_type>;
 
     using iterator = quadtree_set_iterator<Coordinate>;
+
+    using callback_type = std::function<void(Tile, Tile)>;
 
     quadtree_set(
         const exterior_type& exterior,
@@ -125,6 +128,10 @@ public:
         return node.exterior();
     }
 
+    const quadtree_options
+    options() const
+    { return m_options; }
+
     bool
     contains(const key_type& point) const
     {
@@ -139,7 +146,7 @@ public:
     }
 
     void
-    insert(const key_type& key)
+    insert(const key_type& key, std::optional<callback_type> cb = std::nullopt)
     {
         auto point = key;
         if (m_options.has_precision()) {
@@ -150,21 +157,21 @@ public:
 
         auto& node = find(point);
         node.insert(point);
-        subdivide(node);
+        subdivide(node, cb);
     }
 
     void
-    insert(const key_array_type& key)
+    insert(const key_array_type& key, std::optional<callback_type> cb = std::nullopt)
     {
-        insert(key_type(key[0], key[1]));
+        insert(key_type(key[0], key[1]), cb);
     }
 
     template<typename InputIt>
     void
-    insert(InputIt first, InputIt last)
+    insert(InputIt first, InputIt last, std::optional<callback_type> cb = std::nullopt)
     {
         while (first != last) {
-            insert(*first);
+            insert(*first, cb);
             ++first;
         }
     }
@@ -309,7 +316,7 @@ private:
     }
 
     void
-    subdivide(node_type& node)
+    subdivide(node_type& node, std::optional<callback_type> cb = std::nullopt)
     {
         // Subdivision increases the number of terminal nodes by 3, which might not be
         // possible to do, since it will break the promised limit of terminal nodes.
@@ -333,13 +340,17 @@ private:
             m_nodes.insert(std::make_pair(child_tile, n));
             m_total_depth = std::max(child_tile.z(), m_total_depth);
             m_num_terminal_nodes += 1;
+
+            if (cb.has_value()) {
+                (*cb)(node.tile(), child_tile);
+            }
         }
 
         // Current node is no longer terminal, therefore subtract -1 here.
         m_num_terminal_nodes -= 1;
 
         for (auto point : node) {
-            insert(point);
+            insert(point, cb);
         }
 
         node.clear();

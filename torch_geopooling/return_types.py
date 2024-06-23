@@ -21,13 +21,9 @@ from torch import Tensor
 class quad_pool2d(NamedTuple):
     tiles: Tensor
     weight: Tensor
+    values: Tensor
 
 
-class max_quad_pool2d(NamedTuple):
-    tiles: Tensor
+class adaptive_quad_pool2d(NamedTuple):
     weight: Tensor
-
-
-class avg_quad_pool2d(NamedTuple):
-    tiles: Tensor
-    weight: Tensor
+    values: Tensor

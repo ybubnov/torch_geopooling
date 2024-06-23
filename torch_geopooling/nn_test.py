@@ -13,12 +13,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+from typing import Type
+
 import pytest
 import torch
 from shapely.geometry import Polygon
+from torch import nn
 from torch.nn import L1Loss
 
 from torch_geopooling.nn import (
+    AdaptiveAvgQuadPool2d,
     AdaptiveMaxQuadPool2d,
     AdaptiveQuadPool2d,
     AvgQuadPool2d,
@@ -27,12 +31,20 @@ from torch_geopooling.nn import (
 )
 
 
-def test_adaptive_quad_pool2d_gradient() -> None:
-    pool = AdaptiveQuadPool2d(1024, 1, (-180, -90, 360, 180))
+@pytest.mark.parametrize(
+    "module_class",
+    [
+        AdaptiveQuadPool2d,
+        AdaptiveMaxQuadPool2d,
+        AdaptiveAvgQuadPool2d,
+    ],
+    ids=["id", "max", "avg"],
+)
+def test_adaptive_quad_pool2d_gradient(module_class: Type[nn.Module]) -> None:
+    pool = module_class(5, (-180, -90, 360, 180))
 
     input = torch.rand((100, 2), dtype=torch.float64) * 90
-    x = torch.rand((100,), dtype=torch.float64)
-    y = pool(input) * x
+    y = pool(input)
 
     assert pool.weight.grad is None
 
@@ -41,21 +53,7 @@ def test_adaptive_quad_pool2d_gradient() -> None:
     loss.backward()
 
     assert pool.weight.grad is not None
-
-
-def test_adaptive_max_quad_pool2d_gradient() -> None:
-    max_pool = AdaptiveMaxQuadPool2d(1024, 1, (-180, -90, 360, 180))
-
-    input = torch.rand((100, 2), dtype=torch.float64) * 90
-    y = max_pool(input)
-
-    assert max_pool.weight.grad is None
-
-    loss_fn = L1Loss()
-    loss = loss_fn(y, torch.ones_like(y))
-    loss.backward()
-
-    assert max_pool.weight.grad is not None
+    assert pool.weight.grad.sum().item() == pytest.approx(-1)
 
 
 @pytest.mark.parametrize(
@@ -65,14 +63,14 @@ def test_adaptive_max_quad_pool2d_gradient() -> None:
         MaxQuadPool2d,
         AvgQuadPool2d,
     ],
-    ids=["mapping", "max", "avg"],
+    ids=["id", "max", "avg"],
 )
-def test_quad_pool2d_gradient(module_class) -> None:
+def test_quad_pool2d_gradient(module_class: Type[nn.Module]) -> None:
     poly = Polygon([(0.0, 0.0), (1.0, 0.0), (1.0, 1.1), (0.0, 1.0)])
     exterior = (0.0, 0.0, 1.0, 1.0)
 
     pool = module_class(4, poly, exterior, max_depth=5)
-    assert pool.num_features == 1 << 10
+    assert pool.weight.size() == torch.Size([pool.tiles.size(0), 4])
 
     input = torch.rand((100, 2), dtype=torch.float64)
     y = pool(input)

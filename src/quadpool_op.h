@@ -123,66 +123,115 @@ private:
 /// On instance creation, it creates a tile index for fast access to the weights and biases.
 /// Additionally, it checks validity of input data (tiles, indices, weight, bias, etc.), to
 /// ensure it can be used to compute the operation.
-template<typename Coordinate = double, typename Index = int32_t>
+template<typename Coordinate = double>
 struct quadpool_op
 {
-    using tiles_iterator = tensor_iterator2d<Index, 3>;
+    using tiles_iterator = tensor_iterator2d<int64_t, 3>;
     using input_iterator = tensor_iterator2d<Coordinate, 2>;
 
     using quadtree_exterior = c10::ArrayRef<Coordinate>;
-    using quadtree_index = std::unordered_map<Tile, Index>;
+    using weight_indices = std::unordered_map<Tile, int64_t>;
+    using weight_values = std::unordered_map<Tile, torch::Tensor>;
 
     using tensor_reference = const torch::Tensor&;
 
     std::string m_op;
     quadtree_set<Coordinate> m_set;
 
-    /// Tile index is comprised of terminal quadtree nodes.
-    quadtree_index m_tile_index;
+    weight_indices m_indices;
+    weight_values m_values;
 
     /// An indicator that operation is executed as part of the training path.
     bool m_training;
 
     quadpool_op(
         std::string op,
-        tiles_iterator tiles_it,
         const quadtree_exterior& exterior,
         const quadtree_options& options,
-        bool training
+        bool training = false
     )
     : m_op(op),
-      m_set(tiles_it.begin(), tiles_it.end(), check_exterior(exterior).vec(), options),
-      m_tile_index(),
+      m_set(exterior.vec(), options),
+      m_indices(),
+      m_values(),
       m_training(training)
     { }
 
-    quadpool_op(
-        std::string op,
-        tensor_reference tiles,
-        tensor_reference input,
-        const quadtree_exterior& exterior,
-        const quadtree_options& options,
-        bool training
-    )
-    : quadpool_op(op, tiles_iterator(check_tiles(tiles)), exterior, options, training)
+    std::tuple<torch::Tensor, torch::Tensor>
+    forward(tensor_reference tiles, tensor_reference values, tensor_reference input)
     {
+        check_tiles(tiles);
+        check_weight(values);
         check_input(input);
 
-        if (training) {
-            input_iterator input_it(input);
-            m_set.insert(input_it.begin(), input_it.end());
+        TORCH_CHECK(
+            tiles.size(0) == values.size(0),
+            m_op, ": number of tiles should be the same as weights ", tiles.size(0), " != ", values.size(0)
+        );
+
+        auto tiles_it = tiles_iterator(tiles);
+
+        m_set = quadtree_set(tiles_it.begin(), tiles_it.end(), m_set.exterior(), m_set.options());
+        m_indices.clear();
+        m_values.clear();
+
+        // Tiles locations are the same as weight locations, therefore it's possible to simply
+        // insert indices of the weights sequentially. Then after each sub-division of a quad
+        // we will create a new weight in the weight vector.
+        //
+        // Question: how could we guarantee the same order of tiles in the output? Answer: we
+        // don't need to since m_indices already contains all mappings.
+        auto tiles_size = tiles.size(0);
+
+        // When an empty list of tiles was passed in, add references to the root tile (it's
+        // automatically added by the `torch_geopooling::quadtree_set`.
+        if (tiles_size == 0) {
+            auto value = torch::zeros({values.size(1)}, values.options());
+            m_values.insert(std::make_pair(Tile(Tile::root), value));
+            m_indices.insert(std::make_pair(Tile(Tile::root), 0));
         }
 
-        // The tile index will change once the training iteration adjusts the quadtree set
-        // structure. Since quads are embedded into a 1D tensor, there will be a drift of
-        // weights. But with a large enough number of training iterations, these tiles map
-        // eventually converges.
-        //
-        // Tile index is comprised only from terminal nodes.
-        for (auto node_it = m_set.begin(); node_it != m_set.end(); ++node_it) {
-            auto tile = node_it->tile();
-            m_tile_index.insert(std::make_pair(tile, m_tile_index.size()));
+        for (int64_t i = 0; i < tiles_size; i++) {
+            auto tile = Tile(tiles_it[i]);
+            auto value = values[i];
+            auto index = m_indices.size();
+
+            m_values.insert(std::make_pair(tile, value));
+            m_indices.insert(std::make_pair(tile, index));
         }
+
+        torch::Tensor tiles_out, values_out;
+
+        if (m_training) {
+            auto input_it = input_iterator(input);
+
+            m_set.insert(input_it.begin(), input_it.end(), [&](Tile parent_tile, Tile child_tile) {
+                auto value = m_values.at(parent_tile);
+                auto index = m_indices.size();
+
+                m_values.insert(std::make_pair(child_tile, value));
+                m_indices.insert(std::make_tuple(child_tile, index));
+            });
+
+            // After the modification of a tree, update the final tiles and weights.
+            std::size_t values_size = m_values.size();
+            std::vector<torch::Tensor> tiles_vec(values_size);
+            std::vector<torch::Tensor> values_vec(values_size);
+
+            for (const auto& [tile, index] : m_indices) {
+                tiles_vec[index] = torch::tensor(tile.template vec<int64_t>(), tiles.options());
+                values_vec[index] = m_values.at(tile);
+            }
+
+            tiles_out = torch::stack(tiles_vec);
+            values_out = torch::stack(values_vec);
+            values_out = values_out.set_requires_grad(values.requires_grad());
+        } else {
+            tiles_out = tiles;
+            values_out = values;
+        }
+
+        return std::make_tuple(tiles_out, values_out);
     }
 
     input_iterator
@@ -191,49 +240,24 @@ struct quadpool_op
         return input_iterator(input);
     }
 
-    torch::Tensor
-    forward_tiles(tensor_reference tiles) const
+    /// Select index of the tile that contains a specified point.
+    int64_t
+    index_select(const typename input_iterator::value_type& point)
     {
-        if (!m_training) {
-            return tiles;
-        }
+        const auto& node = m_set.find(point);
+        return m_indices.at(node.tile());
+    }
 
-        std::vector<torch::Tensor> tile_rows;
-
-        for (auto node_it = m_set.ibegin(); node_it != m_set.iend(); ++node_it) {
-            auto tile = node_it->tile();
-            tile_rows.push_back(torch::tensor(tile.template vec<Index>(), tiles.options()));
-        }
-
-        return torch::stack(tile_rows);
+    int64_t
+    index_select(const Tile& tile) const
+    {
+        return m_indices.at(tile);
     }
 
     torch::Tensor
-    weight_select(tensor_reference index, tensor_reference weight) const
+    value_select(const Tile& tile) const
     {
-        check_weight(weight);
-        return at::index_select(weight, 0, index);
-    }
-
-    torch::Tensor
-    weight_select(const std::vector<Index>& index, tensor_reference weight) const
-    {
-        return weight_select(torch::tensor(index), weight);
-    }
-
-    torch::Tensor
-    weight_select(const Tile& tile, tensor_reference weight) const
-    {
-        std::vector<Index> index({m_tile_index.at(tile)});
-        return weight_select(index, weight);
-    }
-
-    std::tuple<torch::Tensor, torch::Tensor>
-    weight_index(const Tile& tile, tensor_reference weight) const
-    {
-        std::vector<Index> index({m_tile_index.at(tile)});
-        torch::Tensor tile_index = torch::tensor(index);
-        return std::make_tuple(tile_index.repeat(weight.size(1)), weight_select(index, weight));
+        return m_values.at(tile);
     }
 
 private:
@@ -260,8 +284,8 @@ private:
             m_op, ": tiles must be three-element tuples"
         );
         TORCH_CHECK(
-            tiles.dtype() == torch::kInt32,
-            m_op, ": operation only supports Int32 tiles, got ", tiles.dtype()
+            tiles.dtype() == torch::kInt64,
+            m_op, ": operation only supports Int64 tiles, got ", tiles.dtype()
         );
         return tiles;
     }
@@ -297,54 +321,59 @@ private:
 
 /// Structure represents a aggregation (statistic) quadtree operation.
 ///
-/// On instance create, it creates a statistic index for fast access by a tile.
+/// Forward method creates a statistic index for fast access by a tile.
 ///
 /// There are two functions used to build a stat quadtree: `init` and `stat`, which essentially
 /// are used to compute values for terminal and intermediate nodes respectively. The major
-/// implication of this separation is that `init` part should work only with `m_tile_index`,
-/// since `m_stat_tile_index` is not yet created. And `stat` function is called during
-/// construction of `m_stat_tile_index`.
-template<typename Coordinate = double, typename Index = int32_t, typename Result = torch::Tensor>
-struct quadpool_stat_op : public quadpool_op<Coordinate, Index>
+/// implication of this separation is that `init` part should work only with `m_indices`,
+/// since `m_stats` is not yet created. And `stat` function is called during construction of
+/// `m_stats`.
+template<typename Coordinate = double, typename Statistic = torch::Tensor>
+struct quadpool_stat_op : public quadpool_op<Coordinate>
 {
-    using base = quadpool_op<Coordinate, Index>;
+    using base = quadpool_op<Coordinate>;
+    using tensor_reference = const torch::Tensor&;
 
-    using stat_quadtree_index = std::unordered_map<Tile, Result>;
+    using stat_quadtree_index = std::unordered_map<Tile, Statistic>;
 
-    using init_function = std::function<Result(const base&, const Tile&)>;
-    using stat_function = std::function<Result(const quadpool_stat_op&, std::vector<Tile>&)>;
+    using init_function = std::function<Statistic(const base&, const Tile&)>;
+    using stat_function = std::function<Statistic(const quadpool_stat_op&, std::vector<Tile>&)>;
 
     init_function m_init_function;
     stat_function m_stat_function;
 
     /// Stat tile index is comprised of both terminal and intermediate nodes.
-    stat_quadtree_index m_stat_tile_index;
+    stat_quadtree_index m_stats;
 
     quadpool_stat_op(
         std::string op,
         init_function init_function,
         stat_function stat_function,
-        typename base::tensor_reference tiles,
-        typename base::tensor_reference input,
         const typename base::quadtree_exterior& exterior,
         const quadtree_options& options,
         bool training
     )
-    : quadpool_op<Coordinate, Index>(op, tiles, input, exterior, options, training),
+    : quadpool_op<Coordinate>(op, exterior, options, training),
       m_init_function(init_function),
       m_stat_function(stat_function),
-      m_stat_tile_index()
+      m_stats()
+    { }
+
+    std::tuple<torch::Tensor, torch::Tensor>
+    forward(tensor_reference tiles, tensor_reference values, tensor_reference input)
     {
+        auto result = base::forward(tiles, values, input);
+
         std::priority_queue<Tile, std::vector<Tile>, std::less<Tile>> unvisited;
 
         // Iterate over terminal nodes of the quadtree index and calculate an associated
         // weight. Since this is a terminal node, then statistic will be the value from the
         // weight tensor itself.
-        for (auto item : base::m_tile_index) {
-            auto tile = item.first;
+        for (auto node : base::m_set) {
+            auto tile = node.tile();
             auto stat = m_init_function(*this, tile);
 
-            m_stat_tile_index.insert(std::make_pair(tile, stat));
+            m_stats.insert(std::make_pair(tile, stat));
             unvisited.push(tile.parent());
         }
 
@@ -357,33 +386,31 @@ struct quadpool_stat_op : public quadpool_op<Coordinate, Index>
             //
             // Since we are using a queue, we can be sure that we iterate layer over layer
             // of the quadtree, so all children should be presented in a stat tile index.
-            if (auto it = m_stat_tile_index.find(tile); it != m_stat_tile_index.end()) {
+            if (auto it = m_stats.find(tile); it != m_stats.end()) {
                 continue;
             }
 
-            auto child_tiles = tile.children();
-            auto stat = m_stat_function(*this, child_tiles);
-            m_stat_tile_index.insert(std::make_pair(tile, stat));
+            auto children_tiles = tile.children();
+            auto stat = m_stat_function(*this, children_tiles);
+            m_stats.insert(std::make_pair(tile, stat));
 
             // Do not compute the root tile multiple times, once is enough.
             if (tile != Tile::root) {
                 unvisited.push(tile.parent());
             }
         }
+
+        return result;
     }
 
-    std::vector<Result>
-    result_select(
-        const std::vector<Tile>& tiles,
-        const torch::Tensor& weight,
-        bool missing_ok = false
-    ) const
+    std::vector<Statistic>
+    stats_select(const std::vector<Tile>& tiles, bool missing_ok = false) const
     {
-        std::vector<Result> results;
+        std::vector<Statistic> stats;
         for (const auto& tile : tiles) {
-            auto stat = m_stat_tile_index.find(tile);
-            if (stat != m_stat_tile_index.end()) {
-                results.push_back(stat->second);
+            auto stat = m_stats.find(tile);
+            if (stat != m_stats.end()) {
+                stats.push_back(stat->second);
                 continue;
             }
             if (!missing_ok) {
@@ -391,7 +418,7 @@ struct quadpool_stat_op : public quadpool_op<Coordinate, Index>
             }
         }
 
-        return results;
+        return stats;
     }
 };
 
