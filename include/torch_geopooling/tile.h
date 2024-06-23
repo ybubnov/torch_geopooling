@@ -68,7 +68,7 @@ public:
 
     template<typename T>
     std::vector<T>
-    vec()
+    vec() const
     {
         std::vector<T> zxy({
             static_cast<T>(m_z),

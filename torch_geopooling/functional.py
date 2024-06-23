@@ -15,6 +15,7 @@
 
 from typing import Callable, NamedTuple, Optional, Tuple
 
+import torch
 from torch import Tensor, autograd
 from torch.autograd.function import FunctionCtx
 
@@ -22,70 +23,113 @@ import torch_geopooling._C as _C
 from torch_geopooling import return_types
 from torch_geopooling.tiling import ExteriorTuple
 
-__all__ = ["avg_quad_pool2d", "max_quad_pool2d", "quad_pool2d"]
+__all__ = [
+    "adaptive_avg_quad_pool2d",
+    "adaptive_max_quad_pool2d",
+    "adaptive_quad_pool2d",
+    "avg_quad_pool2d",
+    "max_quad_pool2d",
+    "quad_pool2d",
+]
 
 
 class FunctionParams(NamedTuple):
+    max_terminal_nodes: Optional[int] = None
     max_depth: Optional[int] = None
     capacity: Optional[int] = None
     precision: Optional[int] = None
 
 
-class Function(autograd.Function):
-    forward_impl: Callable[
-        [
-            Tensor,  # tiles
-            Tensor,  # input
-            Tensor,  # weight
-            ExteriorTuple,  # exterior
-            bool,  # training
-            Optional[int],  # max_depth
-            Optional[int],  # capacity
-            Optional[int],  # precision
-        ],
-        Tuple[Tensor, Tensor],  # (tiles, weight)
-    ]
+ForwardType = Callable[
+    [
+        Tensor,  # tiles
+        Tensor,  # weight
+        Tensor,  # input
+        ExteriorTuple,  # exterior
+        bool,  # training
+        Optional[int],  # max_terminal_nodes
+        Optional[int],  # max_depth
+        Optional[int],  # capacity
+        Optional[int],  # precision
+    ],
+    Tuple[Tensor, Tensor, Tensor],  # (tiles, weight, values)
+]
 
-    backward_impl: Callable[
-        [
-            Tensor,  # grad_output
-            Tensor,  # tiles
-            Tensor,  # input
-            Tensor,  # weight
-            ExteriorTuple,  # exterior
-            Optional[int],  # max_depth
-            Optional[int],  # capacity
-            Optional[int],  # precision
-        ],
-        Tuple[Tensor, Tensor],  # (tiles, weight)
-    ]
+
+BackwardType = Callable[
+    [
+        Tensor,  # grad_output
+        Tensor,  # tiles
+        Tensor,  # weight
+        Tensor,  # input
+        ExteriorTuple,  # exterior
+        Optional[int],  # max_terminal_nodes
+        Optional[int],  # max_depth
+        Optional[int],  # capacity
+        Optional[int],  # precision
+    ],
+    Tensor,  # (grad_weight)
+]
+
+
+class Function(autograd.Function):
+    forward_impl: ForwardType
+    backward_impl: BackwardType
 
     @classmethod
     def forward(
         cls,
         tiles: Tensor,
-        input: Tensor,
         weight: Tensor,
+        input: Tensor,
         exterior: ExteriorTuple,
         training: bool,
         params: FunctionParams,
-    ) -> Tuple[Tensor, Tensor]:
-        return cls.forward_impl(tiles, input, weight, exterior, training, *params)
+    ) -> Tuple[Tensor, Tensor, Tensor]:
+        return cls.forward_impl(tiles, weight, input, exterior, training, *params)
 
     @staticmethod
     def setup_context(ctx: FunctionCtx, inputs: Tuple, outputs: Tuple) -> None:
-        tiles, input, weight, exterior, _, params = inputs
-        ctx.save_for_backward(tiles.view_as(tiles), input.view_as(input), weight.view_as(weight))
+        _, _, input, exterior, _, params = inputs
+        tiles, weight, _ = outputs
+
+        ctx.save_for_backward(tiles.view_as(tiles), weight.view_as(weight), input.view_as(input))
         ctx.exterior = exterior
         ctx.params = params
 
     @classmethod
     def backward(
-        cls, ctx: FunctionCtx, grad_tiles: Tensor, grad_output: Tensor
+        cls, ctx: FunctionCtx, grad_tiles: Tensor, grad_weight: Tensor, grad_values: Tensor
     ) -> Tuple[Optional[Tensor], ...]:
-        grad_weight = cls.backward_impl(grad_output, *ctx.saved_tensors, ctx.exterior, *ctx.params)  # type: ignore
+        grad_weight_out = cls.backward_impl(
+            grad_values, *ctx.saved_tensors, ctx.exterior, *ctx.params
+        )  # type: ignore
         # Drop gradient for tiles, this should not be changed by an optimizer.
-        return None, None, grad_weight, None, None, None
+        return None, grad_weight_out, None, None, None, None
+
+    @classmethod
+    def func(
+        cls,
+        tiles: Tensor,
+        weight: Tensor,
+        input: Tensor,
+        exterior: Tuple[float, ...],
+        *,
+        training: bool = True,
+        max_terminal_nodes: Optional[int] = None,
+        max_depth: Optional[int] = None,
+        capacity: Optional[int] = None,
+        precision: Optional[int] = None,
+    ) -> return_types.quad_pool2d:
+        params = FunctionParams(
+            max_terminal_nodes=max_terminal_nodes,
+            max_depth=max_depth,
+            capacity=capacity,
+            precision=precision,
+        )
+
+        result = cls.apply(tiles, weight, input, exterior, training, params)
+        return return_types.quad_pool2d(*result)
 
 
 class QuadPool2d(Function):
@@ -93,41 +137,9 @@ class QuadPool2d(Function):
     backward_impl = _C.quad_pool2d_backward
 
 
-def quad_pool2d(
-    tiles: Tensor,
-    input: Tensor,
-    weight: Tensor,
-    exterior: Tuple[float, ...],
-    *,
-    training: bool = True,
-    max_depth: Optional[int] = None,
-    capacity: Optional[int] = None,
-    precision: Optional[int] = None,
-) -> return_types.quad_pool2d:
-    params = FunctionParams(max_depth=max_depth, capacity=capacity, precision=precision)
-    result = QuadPool2d.apply(tiles, input, weight, exterior, training, params)
-    return return_types.quad_pool2d(*result)
-
-
 class MaxQuadPool2d(Function):
     forward_impl = _C.max_quad_pool2d
     backward_impl = _C.max_quad_pool2d_backward
-
-
-def max_quad_pool2d(
-    tiles: Tensor,
-    input: Tensor,
-    weight: Tensor,
-    exterior: Tuple[float, ...],
-    *,
-    training: bool = True,
-    max_depth: Optional[int] = None,
-    capacity: Optional[int] = None,
-    precision: Optional[int] = None,
-) -> return_types.max_quad_pool2d:
-    params = FunctionParams(max_depth=max_depth, capacity=capacity, precision=precision)
-    result = MaxQuadPool2d.apply(tiles, input, weight, exterior, training, params)
-    return return_types.max_quad_pool2d(*result)
 
 
 class AvgQuadPool2d(Function):
@@ -135,17 +147,127 @@ class AvgQuadPool2d(Function):
     backward_impl = _C.avg_quad_pool2d_backward
 
 
-def avg_quad_pool2d(
-    tiles: Tensor,
-    input: Tensor,
-    weight: Tensor,
-    exterior: Tuple[float, ...],
-    *,
-    training: bool = True,
-    max_depth: Optional[int] = None,
-    capacity: Optional[int] = None,
-    precision: Optional[int] = None,
-) -> return_types.avg_quad_pool2d:
-    params = FunctionParams(max_depth=max_depth, capacity=capacity, precision=precision)
-    result = AvgQuadPool2d.apply(tiles, input, weight, exterior, training, params)
-    return return_types.avg_quad_pool2d(*result)
+quad_pool2d = QuadPool2d.func
+max_quad_pool2d = MaxQuadPool2d.func
+avg_quad_pool2d = AvgQuadPool2d.func
+
+
+class AdaptiveFunction(autograd.Function):
+    forward_impl: ForwardType
+    backward_impl: BackwardType
+
+    @staticmethod
+    def sparse_ravel(weight: Tensor) -> Tuple[Tensor, Tensor]:
+        """Transform weight as coordinate sparse tensor into a tuple of tiles and feature tensor.
+
+        The method transforms sparse encoding of quadtree (where 3 first dimensions are
+        coordinates of a tile and 4-th dimension is an index of a feature in the feature
+        vector), into tuple of coordinates (tiles) and dense weight tensor.
+
+        Effectively: (17,131072,131702,5) -> (nnz,3), (nnz,5); where nnz - is a number of
+        non-zero elements in the sparse tensor.
+        """
+        feature_dim = weight.size(-1)
+        weight = weight.coalesce()
+
+        # Transform sparse tensor into a tuple of (tiles, weight) that are directly usable
+        # by the C++ extension functions.
+        tiles = weight.indices().t()[::feature_dim, :-1]
+        w = weight.values().reshape((-1, feature_dim))
+        return tiles, w
+
+    @staticmethod
+    def sparse_unravel(tiles: Tensor, weight: Tensor, size: torch.Size) -> Tensor:
+        """Perform inverse operation of `ravel`.
+
+        Method packs tiles (coordinates) and weight (values) into a coordinate sparse tensor.
+        """
+        feature_dim = weight.size(-1)
+        feature_indices = torch.arange(0, feature_dim).repeat(tiles.size(0))
+
+        indices = tiles.repeat_interleave(feature_dim, dim=0)
+        indices = torch.column_stack((indices, feature_indices))
+
+        return torch.sparse_coo_tensor(indices.t(), weight.ravel(), size=size)
+
+    @classmethod
+    def forward(
+        cls,
+        weight: Tensor,
+        input: Tensor,
+        exterior: ExteriorTuple,
+        training: bool,
+        params: FunctionParams,
+    ) -> Tuple[Tensor, Tensor]:
+        tiles, w = cls.sparse_ravel(weight)
+
+        tiles_out, w_out, values_out = cls.forward_impl(
+            tiles, w, input, exterior, training, *params
+        )
+
+        weight_out = cls.sparse_unravel(tiles_out, w_out, size=weight.size())
+        return weight_out.coalesce(), values_out
+
+    @staticmethod
+    def setup_context(ctx: FunctionCtx, inputs: Tuple, outputs: Tuple) -> None:
+        _, input, exterior, _, params = inputs
+        weight, _ = outputs
+
+        ctx.save_for_backward(weight, input)
+        ctx.exterior = exterior
+        ctx.params = params
+
+    @classmethod
+    def backward(
+        cls, ctx: FunctionCtx, grad_weight: Tensor, grad_values: Tensor
+    ) -> Tuple[Optional[Tensor], ...]:
+        weight, input = ctx.saved_tensors
+        tiles, w = cls.sparse_ravel(weight)
+
+        grad_weight_out = cls.backward_impl(grad_values, tiles, w, input, ctx.exterior, *ctx.params)  # type: ignore
+        grad_weight_out = cls.sparse_unravel(tiles, grad_weight_out, size=weight.size())
+
+        return grad_weight_out.coalesce(), None, None, None, None
+
+    @classmethod
+    def func(
+        cls,
+        weight: Tensor,
+        input: Tensor,
+        exterior: Tuple[float, ...],
+        *,
+        training: bool = True,
+        max_terminal_nodes: Optional[int] = None,
+        max_depth: Optional[int] = None,
+        capacity: Optional[int] = None,
+        precision: Optional[int] = None,
+    ) -> return_types.adaptive_quad_pool2d:
+        params = FunctionParams(
+            max_terminal_nodes=max_terminal_nodes,
+            max_depth=max_depth,
+            capacity=capacity,
+            precision=precision,
+        )
+
+        result = cls.apply(weight, input, exterior, training, params)
+        return return_types.adaptive_quad_pool2d(*result)
+
+
+class AdaptiveQuadPool2d(AdaptiveFunction):
+    forward_impl = _C.quad_pool2d
+    backward_impl = _C.quad_pool2d_backward
+
+
+class AdaptiveMaxQuadPool2d(AdaptiveFunction):
+    forward_impl = _C.max_quad_pool2d
+    backward_impl = _C.max_quad_pool2d_backward
+
+
+class AdaptiveAvgQuadPool2d(AdaptiveFunction):
+    forward_impl = _C.avg_quad_pool2d
+    backward_impl = _C.avg_quad_pool2d_backward
+
+
+adaptive_quad_pool2d = AdaptiveQuadPool2d.func
+adaptive_max_quad_pool2d = AdaptiveMaxQuadPool2d.func
+adaptive_avg_quad_pool2d = AdaptiveAvgQuadPool2d.func

@@ -16,7 +16,14 @@
 import pytest
 import torch
 
-from torch_geopooling.functional import avg_quad_pool2d, max_quad_pool2d, quad_pool2d
+from torch_geopooling.functional import (
+    adaptive_quad_pool2d,
+    adaptive_avg_quad_pool2d,
+    adaptive_max_quad_pool2d,
+    avg_quad_pool2d,
+    max_quad_pool2d,
+    quad_pool2d,
+)
 
 
 @pytest.mark.parametrize(
@@ -26,17 +33,17 @@ from torch_geopooling.functional import avg_quad_pool2d, max_quad_pool2d, quad_p
         max_quad_pool2d,
         avg_quad_pool2d,
     ],
-    ids=["mapping", "max", "avg"],
+    ids=["id", "max", "avg"],
 )
 def test_quad_pool2d(function) -> None:
-    tiles = torch.empty((0, 3), dtype=torch.int32)
+    tiles = torch.empty((0, 3), dtype=torch.int64)
     input = torch.rand((100, 2), dtype=torch.float64) * 10.0
-    weight = torch.randn([64, 5], dtype=torch.float64)
+    weight = torch.randn([0, 5], dtype=torch.float64)
 
     result = function(
         tiles,
-        input,
         weight,
+        input,
         (0.0, 0.0, 10.0, 10.0),
         training=True,
         max_depth=16,
@@ -46,4 +53,33 @@ def test_quad_pool2d(function) -> None:
     assert result.tiles.size(0) > 0
     assert result.tiles.size(1) == 3
 
-    assert result.weight.size() == torch.Size([input.size(0), weight.size(1)])
+    assert result.weight.size(0) == result.tiles.size(0)
+    assert result.values.size() == torch.Size([input.size(0), weight.size(1)])
+
+
+@pytest.mark.parametrize(
+    "function",
+    [
+        adaptive_quad_pool2d,
+        adaptive_max_quad_pool2d,
+        adaptive_avg_quad_pool2d,
+    ],
+    ids=["id", "max", "avg"],
+)
+def test_adaptive_quad_pool2d(function) -> None:
+    input = torch.rand((100, 2), dtype=torch.float64) * 10.0
+    weight = torch.sparse_coo_tensor(size=(10, 1 << 10, 1 << 10, 4), dtype=torch.float64)
+
+    result = function(
+        weight,
+        input,
+        (0.0, 0.0, 10.0, 10.0),
+        training=True,
+        max_depth=16,
+        capacity=1,
+        precision=6,
+    )
+
+    assert result.weight.layout == torch.sparse_coo
+    assert result.weight.indices().size(0) > 0
+    assert result.values.size() == torch.Size([input.size(0), weight.size(-1)])

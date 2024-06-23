@@ -78,11 +78,11 @@ public:
 
         auto [x, y, w, h] = xywh;
 
-        if (w <= T(0)) {
-            throw value_error("quadrect: width ({}) should be a positive number", w);
+        if (w < T(0)) {
+            throw value_error("quadrect: width ({}) should be a non-negative number", w);
         }
-        if (h <= T(0)) {
-            throw value_error("quadrect: height ({}) should be a positive number", h);
+        if (h < T(0)) {
+            throw value_error("quadrect: height ({}) should be a non-negative number", h);
         }
 
         m_xmin = x;
