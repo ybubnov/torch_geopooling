@@ -207,7 +207,7 @@ struct quadpool_op
 
             m_set.insert(input_it.begin(), input_it.end(), [&](Tile parent_tile, Tile child_tile) {
                 auto value = m_values.at(parent_tile);
-                auto index = m_indices.size();
+                int64_t index = m_indices.size();
 
                 m_values.insert(std::make_pair(child_tile, value));
                 m_indices.insert(std::make_tuple(child_tile, index));
