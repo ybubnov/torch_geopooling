@@ -209,8 +209,8 @@ struct quadpool_op
                 auto value = m_values.at(parent_tile);
                 int64_t index = m_indices.size();
 
-                m_values.insert(std::make_pair(Tile(child_tile), value));
-                m_indices.insert(std::make_tuple(Tile(child_tile), index));
+                m_values.insert(std::make_pair(child_tile, value));
+                m_indices.insert(std::make_pair(child_tile, index));
             });
 
             // After the modification of a tree, update the final tiles and weights.
