@@ -9,7 +9,9 @@
 namespace torch_geopooling {
 
 
-template <typename Coordinate> class quadtree_node {
+template <typename Coordinate>
+class quadtree_node
+{
 public:
     using key_type = std::pair<Coordinate, Coordinate>;
 

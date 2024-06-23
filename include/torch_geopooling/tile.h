@@ -28,7 +28,8 @@
 namespace torch_geopooling {
 
 
-class Tile {
+class Tile
+{
 public:
     Tile();
 
@@ -109,7 +110,9 @@ private:
 namespace std {
 
 
-template <> struct hash<torch_geopooling::Tile> {
+template <>
+struct hash<torch_geopooling::Tile>
+{
     using argument_type = torch_geopooling::Tile;
 
     std::size_t
@@ -127,7 +130,9 @@ template <> struct hash<torch_geopooling::Tile> {
 } // namespace std
 
 
-template <> struct fmt::formatter<torch_geopooling::Tile> {
+template <>
+struct fmt::formatter<torch_geopooling::Tile>
+{
     template <typename ParseContext>
     constexpr auto
     parse(ParseContext& context)

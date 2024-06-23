@@ -6,7 +6,9 @@
 #include <fmt/format.h>
 
 
-template <typename T> struct fmt::formatter<std::array<T, 2>> {
+template <typename T>
+struct fmt::formatter<std::array<T, 2>>
+{
     template <typename ParseContext>
     constexpr auto
     parse(ParseContext& context)

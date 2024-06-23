@@ -20,10 +20,13 @@
 namespace torch_geopooling {
 
 
-template <typename Coordinate> class quadtree_set_iterator;
+template <typename Coordinate>
+class quadtree_set_iterator;
 
 
-template <typename Coordinate> class quadtree_set {
+template <typename Coordinate>
+class quadtree_set
+{
 public:
     using key_type = std::pair<Coordinate, Coordinate>;
     using key_array_type = std::array<Coordinate, 2>;
@@ -360,7 +363,9 @@ private:
 /// terminal nodes of a quadtree.
 ///
 /// Effectively iterator utilizes breadth-first graph traversal algorithm.
-template <typename Coordinate> class quadtree_set_iterator {
+template <typename Coordinate>
+class quadtree_set_iterator
+{
 public:
     using iterator_category = std::forward_iterator_tag;
 

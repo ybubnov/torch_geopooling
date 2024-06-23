@@ -15,7 +15,9 @@ hash_combine(SizeT& seed, T value)
 }
 
 
-template <typename T> struct hash<pair<T, T>> {
+template <typename T>
+struct hash<pair<T, T>>
+{
     using argument_type = pair<T, T>;
 
     size_t

@@ -28,9 +28,5 @@ repos:
   rev: v1.3.5
   hooks:
     - id: clang-format
+      name: "Clang C++ formatting"
       args: [-i]
-        #- id: clang-tidy
-        #- id: oclint
-        #- id: uncrustify
-        #- id: cppcheck
-        #- id: cpplint

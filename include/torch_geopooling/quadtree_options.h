@@ -7,7 +7,8 @@
 namespace torch_geopooling {
 
 
-struct quadtree_options {
+struct quadtree_options
+{
 
     quadtree_options()
     : m_max_depth(17),
