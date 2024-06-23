@@ -14,10 +14,6 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Install pre-commit tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install clang-format --no-install-recommends -y
       - name: Install pre-commit
         run: pip install pre-commit
       - name: Run pre-commit
