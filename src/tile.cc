@@ -24,12 +24,16 @@ const Tile Tile::root = Tile(0, 0, 0);
 
 
 Tile::Tile()
-: m_z(0), m_x(0), m_y(0)
-{ }
+: m_z(0),
+  m_x(0),
+  m_y(0)
+{}
 
 
 Tile::Tile(std::size_t z, std::size_t x, std::size_t y)
-: m_z(z), m_x(x), m_y(y)
+: m_z(z),
+  m_x(x),
+  m_y(y)
 {
     std::size_t max_size = 1 << m_z;
     if (x >= max_size) {
@@ -47,17 +51,23 @@ Tile::Tile(std::size_t z, std::size_t x, std::size_t y)
 
 std::size_t
 Tile::z() const
-{ return m_z; }
+{
+    return m_z;
+}
 
 
 std::size_t
 Tile::x() const
-{ return m_x; }
+{
+    return m_x;
+}
 
 
 std::size_t
 Tile::y() const
-{ return m_y; }
+{
+    return m_y;
+}
 
 
 Tile

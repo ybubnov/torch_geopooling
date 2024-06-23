@@ -5,8 +5,8 @@
 #include <iostream>
 #include <iterator>
 #include <optional>
-#include <stdexcept>
 #include <queue>
+#include <stdexcept>
 #include <unordered_map>
 #include <utility>
 
@@ -20,19 +20,15 @@
 namespace torch_geopooling {
 
 
-template
-<typename Coordinate, typename T, class Container>
+template <typename Coordinate, typename T, class Container>
 class quadtree_iterator;
 
 
-template
-<
+template <
     typename Coordinate,
     typename T = long,
-    class Container = std::unordered_map<std::pair<Coordinate, Coordinate>, T>
->
-class quadtree
-{
+    class Container = std::unordered_map<std::pair<Coordinate, Coordinate>, T>>
+class quadtree {
 public:
     using key_type = std::pair<Coordinate, Coordinate>;
 
@@ -57,50 +53,68 @@ public:
       m_tile(tile),
       m_options(options.value_or(quadtree_options())),
       m_nodes(nullptr)
-    { }
+    {}
 
     quadtree(
         const std::initializer_list<Coordinate> xywh,
         std::optional<quadtree_options> options = std::nullopt
     )
     : quadtree(exterior_type(xywh), Tile::root, options)
-    { }
+    {}
 
     Tile
     tile() const
-    { return m_tile; }
+    {
+        return m_tile;
+    }
 
     inline bool
     is_terminal() const
-    { return m_nodes == nullptr; }
+    {
+        return m_nodes == nullptr;
+    }
 
     const exterior_type&
     exterior() const
-    { return m_exterior; }
+    {
+        return m_exterior;
+    }
 
     bool
     contains(const key_type& point) const
-    { return m_exterior.contains(point); }
+    {
+        return m_exterior.contains(point);
+    }
 
     node_iterator
     begin() const
-    { return node_iterator(*this); }
+    {
+        return node_iterator(*this);
+    }
 
     node_iterator
     end() const
-    { return node_iterator(); }
+    {
+        return node_iterator();
+    }
 
     node_iterator
     begin()
-    { return node_iterator(*this); }
+    {
+        return node_iterator(*this);
+    }
 
     node_iterator
     end()
-    { return node_iterator(); }
+    {
+        return node_iterator();
+    }
 
     std::size_t
     depth() const
-    { return m_tile.z(); }
+    {
+        return m_tile.z();
+    }
 
     std::size_t
     total_depth() const
@@ -129,7 +143,9 @@ public:
 
     void
     insert(const key_type& point, const mapped_type& value)
-    { insert(std::make_pair(point, value)); }
+    {
+        insert(std::make_pair(point, value));
+    }
 
     quadtree<Coordinate, T, Container>&
     find(const key_type& point, std::optional<std::size_t> max_depth = std::nullopt)
@@ -188,7 +204,9 @@ public:
 
     const quadtree<Coordinate, T>&
     find(const key_type& point, std::optional<std::size_t> max_depth = std::nullopt) const
-    { return find(point, max_depth); }
+    {
+        return find(point, max_depth);
+    }
 
     std::size_t
     size() const
@@ -229,11 +247,8 @@ private:
     void
     subdivide()
     {
-        if (
-            m_nodes != nullptr ||
-            m_data.size() <= m_options.capacity() ||
-            m_tile.z() >= m_options.max_depth()
-        ) {
+        if (m_nodes != nullptr || m_data.size() <= m_options.capacity()
+            || m_tile.z() >= m_options.max_depth()) {
             return;
         }
 
@@ -243,10 +258,8 @@ private:
         quad<exterior_type> exteriors = m_exterior.symmetric_split();
 
         node_type nodes(
-            make_subtree(exteriors, 0, 0),
-            make_subtree(exteriors, 0, 1),
-            make_subtree(exteriors, 1, 0),
-            make_subtree(exteriors, 1, 1)
+            make_subtree(exteriors, 0, 0), make_subtree(exteriors, 0, 1),
+            make_subtree(exteriors, 1, 0), make_subtree(exteriors, 1, 1)
         );
 
         m_nodes = std::make_shared<node_type>(std::move(nodes));
@@ -263,10 +276,8 @@ private:
 };
 
 
-template
-<typename Coordinate, typename T, class Container>
-class quadtree_iterator
-{
+template <typename Coordinate, typename T, class Container>
+class quadtree_iterator {
 public:
     using iterator_category = std::forward_iterator_tag;
 
@@ -278,33 +289,41 @@ public:
 
     using pointer = value_type*;
 
-    explicit
-    quadtree_iterator(const value_type& tree)
+    explicit quadtree_iterator(const value_type& tree)
     : m_queue()
-    { m_queue.push(tree); }
+    {
+        m_queue.push(tree);
+    }
 
     quadtree_iterator()
     : m_queue()
-    { }
+    {}
 
-    ~quadtree_iterator()
-    { }
+    ~quadtree_iterator() {}
 
     iterator&
     operator++()
-    { return next(); }
+    {
+        return next();
+    }
 
     reference
     operator*()
-    { return m_queue.front(); }
+    {
+        return m_queue.front();
+    }
 
     pointer
     operator->()
-    { return m_queue.front(); }
+    {
+        return m_queue.front();
+    }
 
     bool
     operator!=(const iterator& rhs)
-    { return !(m_queue.empty() && rhs.m_queue.empty()); }
+    {
+        return !(m_queue.empty() && rhs.m_queue.empty());
+    }
 
 private:
     std::queue<value_type> m_queue;
@@ -314,7 +333,7 @@ private:
     {
         auto tree = m_queue.front();
         if (!tree.is_terminal()) {
-            for (auto const& node: *tree.m_nodes) {
+            for (auto const& node : *tree.m_nodes) {
                 m_queue.push(node);
             }
         }

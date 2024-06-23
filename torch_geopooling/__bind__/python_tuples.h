@@ -36,7 +36,7 @@ TPHUtils_packDoubleArray(size_t size, const double* numbers)
 namespace pybind11::detail {
 
 
-template<>
+template <>
 struct TORCH_PYTHON_API type_caster<c10::ArrayRef<double>> {
 public:
     PYBIND11_TYPE_CASTER(c10::ArrayRef<double>, _("tuple[float, ...]"));
@@ -52,9 +52,8 @@ public:
             v_value.resize(size);
 
             for (const auto idx : c10::irange(size)) {
-                PyObject* obj = (
-                    tuple ? PyTuple_GET_ITEM(source, idx) : PyList_GET_ITEM(source, idx)
-                );
+                PyObject* obj
+                    = (tuple ? PyTuple_GET_ITEM(source, idx) : PyList_GET_ITEM(source, idx));
 
                 if (THPVariable_Check(obj)) {
                     v_value[idx] = THPVariable_Unpack(obj).item<double>();

@@ -21,23 +21,19 @@ BOOST_AUTO_TEST_CASE(avg_quad_pool2d_training)
 
     auto tensor_options = torch::TensorOptions().dtype(torch::kFloat64);
     auto weight = torch::randn({0, 3}, tensor_options.requires_grad(true));
-    auto input_train = torch::tensor({
-        {1.0, 1.0},
-        {1.7, 1.7},
-        {1.0, 1.7},
-        {1.7, 1.0},
-        {9.9, 9.9},
-        {8.0, 8.0}
-    }, tensor_options);
+    auto input_train = torch::tensor(
+        {{1.0, 1.0}, {1.7, 1.7}, {1.0, 1.7}, {1.7, 1.0}, {9.9, 9.9}, {8.0, 8.0}}, tensor_options
+    );
 
     std::vector<double> exterior({0.0, 0.0, 10.0, 10.0});
-    auto [tiles_out, weight_out, values_out] = avg_quad_pool2d(
-        tiles, weight, input_train, exterior, /*training=*/true
-    );
+    auto [tiles_out, weight_out, values_out]
+        = avg_quad_pool2d(tiles, weight, input_train, exterior, /*training=*/true);
 
     BOOST_REQUIRE_EQUAL(tiles_out.sizes(), torch::IntArrayRef({21, 3}));
     BOOST_REQUIRE_EQUAL(weight_out.sizes(), torch::IntArrayRef({21, 3}));
-    BOOST_REQUIRE_EQUAL(values_out.sizes(), torch::IntArrayRef({input_train.size(0), weight.size(1)}));
+    BOOST_REQUIRE_EQUAL(
+        values_out.sizes(), torch::IntArrayRef({input_train.size(0), weight.size(1)})
+    );
 
     BOOST_CHECK(weight_out.requires_grad());
 
@@ -46,13 +42,14 @@ BOOST_AUTO_TEST_CASE(avg_quad_pool2d_training)
 
     auto input_test = torch::tensor({{1.8, 1.8}}, tensor_options);
 
-    std::tie(tiles_out, weight_out, values_out) = avg_quad_pool2d(
-        tiles_out, weight_out, input_test, exterior, /*training=*/true
-    );
+    std::tie(tiles_out, weight_out, values_out)
+        = avg_quad_pool2d(tiles_out, weight_out, input_test, exterior, /*training=*/true);
 
     BOOST_REQUIRE_EQUAL(tiles_out.sizes(), torch::IntArrayRef({21, 3}));
     BOOST_REQUIRE_EQUAL(weight_out.sizes(), torch::IntArrayRef({21, 3}));
-    BOOST_REQUIRE_EQUAL(values_out.sizes(), torch::IntArrayRef({input_test.size(0), weight.size(1)}));
+    BOOST_REQUIRE_EQUAL(
+        values_out.sizes(), torch::IntArrayRef({input_test.size(0), weight.size(1)})
+    );
 
     auto weight_mean = at::mean(weight_out.index({Slice(8, 12), Slice()}), 0);
 
@@ -68,37 +65,38 @@ BOOST_AUTO_TEST_CASE(avg_quad_pool2d_training)
 BOOST_AUTO_TEST_CASE(avg_quad_pool2d_backward_grad)
 {
     auto tiles_options = torch::TensorOptions().dtype(torch::kInt64);
-    auto tiles = torch::tensor({
-        {0, 0, 0},
-        {1, 0, 0},
-        {2, 0, 0}, // (1,0,0) -> weight[2]
-        {1, 1, 0},
-        {2, 0, 1}, // (1,0,0) -> weight[4]
-        {2, 1, 0}, // (1,0,0) -> weight[5]
-        {2, 2, 0}, // (1,1,0) -> weight[6]
-        {2, 2, 1}, // (1,1,0) -> weight[7]
-    }, tiles_options);
+    auto tiles = torch::tensor(
+        {
+            {0, 0, 0},
+            {1, 0, 0},
+            {2, 0, 0}, // (1,0,0) -> weight[2]
+            {1, 1, 0},
+            {2, 0, 1}, // (1,0,0) -> weight[4]
+            {2, 1, 0}, // (1,0,0) -> weight[5]
+            {2, 2, 0}, // (1,1,0) -> weight[6]
+            {2, 2, 1}, // (1,1,0) -> weight[7]
+        },
+        tiles_options
+    );
 
     auto tensor_options = torch::TensorOptions().dtype(torch::kFloat64);
     auto weight = torch::rand({8, 3}, tensor_options.requires_grad(true));
 
-    auto input = torch::tensor({
-        {0.1, 0.1}, // (2,0,0) -> avg(weight[2], weight[4], weight[5])
-        {0.2, 0.1}, // (2,0,0) -> avg(weight[2], weight[4], weight[5])
-        {1.3, 0.2}  // (2,2,0) -> avg(weight[6], weight[7])
-    }, tensor_options);
+    auto input = torch::tensor(
+        {
+            {0.1, 0.1}, // (2,0,0) -> avg(weight[2], weight[4], weight[5])
+            {0.2, 0.1}, // (2,0,0) -> avg(weight[2], weight[4], weight[5])
+            {1.3, 0.2}  // (2,2,0) -> avg(weight[6], weight[7])
+        },
+        tensor_options
+    );
 
-    auto grad_output = torch::tensor({
-        {10.0, 1.0, 100.0},
-        {22.0, 2.2, 220.0},
-        {30.0, 3.0, 300.0}
-    }, tensor_options);
+    auto grad_output = torch::tensor(
+        {{10.0, 1.0, 100.0}, {22.0, 2.2, 220.0}, {30.0, 3.0, 300.0}}, tensor_options
+    );
 
     auto grad_weight = avg_quad_pool2d_backward(
-        grad_output,
-        tiles,
-        weight,
-        input,
+        grad_output, tiles, weight, input,
         /*exterior=*/{0.0, 0.0, 2.0, 2.0}
     );
 

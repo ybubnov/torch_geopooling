@@ -34,12 +34,12 @@ public:
 
     Tile(std::size_t z, std::size_t x, std::size_t y);
 
-    template<typename T>
+    template <typename T>
     Tile(const std::array<T, 3>& zxy)
     : Tile(
-        static_cast<std::size_t>(zxy[0]),
-        static_cast<std::size_t>(zxy[1]),
-        static_cast<std::size_t>(zxy[2])
+          static_cast<std::size_t>(zxy[0]),
+          static_cast<std::size_t>(zxy[1]),
+          static_cast<std::size_t>(zxy[2])
       )
     {
         auto [z, x, y] = zxy;
@@ -54,27 +54,29 @@ public:
         }
     }
 
-    std::size_t z() const;
+    std::size_t
+    z() const;
 
-    std::size_t x() const;
+    std::size_t
+    x() const;
 
-    std::size_t y() const;
+    std::size_t
+    y() const;
 
-    Tile parent() const;
+    Tile
+    parent() const;
 
-    Tile child(std::size_t x, std::size_t y) const;
+    Tile
+    child(std::size_t x, std::size_t y) const;
 
-    std::vector<Tile> children() const;
+    std::vector<Tile>
+    children() const;
 
-    template<typename T>
+    template <typename T>
     std::vector<T>
     vec() const
     {
-        std::vector<T> zxy({
-            static_cast<T>(m_z),
-            static_cast<T>(m_y),
-            static_cast<T>(m_x)
-        });
+        std::vector<T> zxy({static_cast<T>(m_z), static_cast<T>(m_y), static_cast<T>(m_x)});
         return zxy;
     }
 
@@ -104,17 +106,16 @@ private:
 } // namespace torch_geopooling
 
 
-
 namespace std {
 
 
-template<>
-struct hash<torch_geopooling::Tile>
-{
+template <>
+struct hash<torch_geopooling::Tile> {
     using argument_type = torch_geopooling::Tile;
 
     std::size_t
-    operator()(const argument_type& argument) const noexcept {
+    operator()(const argument_type& argument) const noexcept
+    {
         std::size_t seed = 0;
         hash_combine(seed, argument.z());
         hash_combine(seed, argument.x());
@@ -127,16 +128,18 @@ struct hash<torch_geopooling::Tile>
 } // namespace std
 
 
-template<>
-struct fmt::formatter<torch_geopooling::Tile>
-{
-    template<typename ParseContext>
-    constexpr auto parse(ParseContext& context) {
+template <>
+struct fmt::formatter<torch_geopooling::Tile> {
+    template <typename ParseContext>
+    constexpr auto
+    parse(ParseContext& context)
+    {
         return context.begin();
     }
 
-    template<typename FormatContext>
-    auto format(torch_geopooling::Tile const& tile, FormatContext& context) const
+    template <typename FormatContext>
+    auto
+    format(torch_geopooling::Tile const& tile, FormatContext& context) const
     {
         return fmt::format_to(context.out(), "Tile({}, {}, {})", tile.z(), tile.x(), tile.y());
     }

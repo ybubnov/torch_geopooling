@@ -17,16 +17,16 @@
 #pragma once
 
 #include <functional>
+#include <queue>
 #include <unordered_map>
 #include <vector>
-#include <queue>
 
 #include <ATen/Functions.h>
 
 #include <torch_geopooling/formatting.h>
 #include <torch_geopooling/functional.h>
-#include <torch_geopooling/quadtree_set.h>
 #include <torch_geopooling/quadtree_options.h>
+#include <torch_geopooling/quadtree_set.h>
 
 
 namespace torch_geopooling {
@@ -37,7 +37,7 @@ namespace torch_geopooling {
 /// This class is used to access 2-dimensional tensor as contiguous vector of array. Template
 /// parameter `N` defines the size of the arrays. Iterator takes only the first `N` elements
 /// from the second dimension to the output result.
-template<typename Scalar, int N>
+template <typename Scalar, int N>
 class tensor_iterator2d {
 public:
     using iterator_category = std::forward_iterator_tag;
@@ -57,14 +57,15 @@ public:
     {
         TORCH_CHECK(
             tensor.size(1) == N,
-            "tensor_iterator2d: incompatible shape of a size(1) = ",
-            tensor.size(1), ", expect ", N
+            "tensor_iterator2d: incompatible shape of a size(1) = ", tensor.size(1), ", expect ", N
         );
     }
 
     iterator
     begin()
-    { return *this; }
+    {
+        return *this;
+    }
 
     iterator
     end()
@@ -123,9 +124,8 @@ private:
 /// On instance creation, it creates a tile index for fast access to the weights and biases.
 /// Additionally, it checks validity of input data (tiles, indices, weight, bias, etc.), to
 /// ensure it can be used to compute the operation.
-template<typename Coordinate = double>
-struct quadpool_op
-{
+template <typename Coordinate = double>
+struct quadpool_op {
     using tiles_iterator = tensor_iterator2d<int64_t, 3>;
     using input_iterator = tensor_iterator2d<Coordinate, 2>;
 
@@ -155,7 +155,7 @@ struct quadpool_op
       m_indices(),
       m_values(),
       m_training(training)
-    { }
+    {}
 
     std::tuple<torch::Tensor, torch::Tensor>
     forward(tensor_reference tiles, tensor_reference values, tensor_reference input)
@@ -165,8 +165,9 @@ struct quadpool_op
         check_input(input);
 
         TORCH_CHECK(
-            tiles.size(0) == values.size(0),
-            m_op, ": number of tiles should be the same as weights ", tiles.size(0), " != ", values.size(0)
+            tiles.size(0) == values.size(0), m_op,
+            ": number of tiles should be the same as weights ", tiles.size(0),
+            " != ", values.size(0)
         );
 
         auto tiles_it = tiles_iterator(tiles);
@@ -261,14 +262,10 @@ struct quadpool_op
     }
 
 private:
-
     const quadtree_exterior&
     check_exterior(const quadtree_exterior& exterior) const
     {
-        TORCH_CHECK(
-            exterior.size() == 4,
-            m_op, ": exterior must be a tuple of four doubles"
-        );
+        TORCH_CHECK(exterior.size() == 4, m_op, ": exterior must be a tuple of four doubles");
         return exterior;
     }
 
@@ -276,16 +273,12 @@ private:
     check_tiles(tensor_reference tiles) const
     {
         TORCH_CHECK(
-            tiles.dim() == 2,
-            m_op, ": operation only supports 2D tiles, got ", tiles.dim(), "D"
+            tiles.dim() == 2, m_op, ": operation only supports 2D tiles, got ", tiles.dim(), "D"
         );
+        TORCH_CHECK(tiles.size(1) == 3, m_op, ": tiles must be three-element tuples");
         TORCH_CHECK(
-            tiles.size(1) == 3,
-            m_op, ": tiles must be three-element tuples"
-        );
-        TORCH_CHECK(
-            tiles.dtype() == torch::kInt64,
-            m_op, ": operation only supports Int64 tiles, got ", tiles.dtype()
+            tiles.dtype() == torch::kInt64, m_op, ": operation only supports Int64 tiles, got ",
+            tiles.dtype()
         );
         return tiles;
     }
@@ -294,15 +287,12 @@ private:
     check_input(tensor_reference input) const
     {
         TORCH_CHECK(
-            input.dim() == 2,
-            m_op, ": operation only supports 2D input, got ", input.dim(), "D"
+            input.dim() == 2, m_op, ": operation only supports 2D input, got ", input.dim(), "D"
         );
+        TORCH_CHECK(input.size(1) == 2, m_op, ": input must be two-element tuples");
         TORCH_CHECK(
-            input.size(1) == 2,
-            m_op, ": input must be two-element tuples");
-        TORCH_CHECK(
-            input.dtype() == torch::kFloat64,
-            m_op, ": operation only supports Float64 input, got ", input.dtype()
+            input.dtype() == torch::kFloat64, m_op, ": operation only supports Float64 input, got ",
+            input.dtype()
         );
         return input;
     }
@@ -311,12 +301,10 @@ private:
     check_weight(tensor_reference weight) const
     {
         TORCH_CHECK(
-            weight.dim() == 2,
-            m_op, ": operation only supports 2D weight, got ", weight.dim(), "D"
+            weight.dim() == 2, m_op, ": operation only supports 2D weight, got ", weight.dim(), "D"
         );
     }
 };
-
 
 
 /// Structure represents a aggregation (statistic) quadtree operation.
@@ -328,9 +316,8 @@ private:
 /// implication of this separation is that `init` part should work only with `m_indices`,
 /// since `m_stats` is not yet created. And `stat` function is called during construction of
 /// `m_stats`.
-template<typename Coordinate = double, typename Statistic = torch::Tensor>
-struct quadpool_stat_op : public quadpool_op<Coordinate>
-{
+template <typename Coordinate = double, typename Statistic = torch::Tensor>
+struct quadpool_stat_op : public quadpool_op<Coordinate> {
     using base = quadpool_op<Coordinate>;
     using tensor_reference = const torch::Tensor&;
 
@@ -357,7 +344,7 @@ struct quadpool_stat_op : public quadpool_op<Coordinate>
       m_init_function(init_function),
       m_stat_function(stat_function),
       m_stats()
-    { }
+    {}
 
     std::tuple<torch::Tensor, torch::Tensor>
     forward(tensor_reference tiles, tensor_reference values, tensor_reference input)

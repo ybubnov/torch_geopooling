@@ -1,8 +1,8 @@
 #pragma once
 
 #include <algorithm>
-#include <iostream>
 #include <initializer_list>
+#include <iostream>
 
 #include <torch_geopooling/exception.h>
 #include <torch_geopooling/tile.h>
@@ -24,11 +24,11 @@ public:
 
     quad(const value_type& fill)
     : m_elements({fill, fill, fill, fill})
-    { }
+    {}
 
     quad(value_type t00, value_type t01, value_type t10, value_type t11)
     : m_elements({t00, t01, t10, t11})
-    { }
+    {}
 
     value_type&
     at(size_type x, size_type y)
@@ -44,19 +44,24 @@ public:
 
     const value_type&
     at(size_type x, size_type y) const
-    { return at(x, y); }
+    {
+        return at(x, y);
+    }
 
     const_iterator
     begin() const
-    { return m_elements.cbegin(); }
+    {
+        return m_elements.cbegin();
+    }
 
     const_iterator
     end() const
-    { return m_elements.cend(); }
+    {
+        return m_elements.cend();
+    }
 
 private:
     container_type m_elements;
-
 };
 
 
@@ -93,15 +98,15 @@ public:
 
     quadrect(const std::initializer_list<value_type>& list)
     : quadrect(std::vector(list))
-    { }
+    {}
 
     quadrect(const std::tuple<value_type, value_type, value_type, value_type>& xywh)
     : quadrect(std::get<0>(xywh), std::get<1>(xywh), std::get<2>(xywh), std::get<3>(xywh))
-    { }
+    {}
 
     quadrect(T xmin, T ymin, T width, T height)
     : quadrect({xmin, ymin, width, height})
-    { }
+    {}
 
     ~quadrect() = default;
 
@@ -109,18 +114,22 @@ public:
     operator==(const quadrect& rhs) const
     {
         return (
-            m_xmin == rhs.m_xmin && m_xmax == rhs.m_xmax
-            && m_ymin == rhs.m_ymin && m_ymax == rhs.m_ymax
+            m_xmin == rhs.m_xmin && m_xmax == rhs.m_xmax && m_ymin == rhs.m_ymin
+            && m_ymax == rhs.m_ymax
         );
     }
 
     inline value_type
     width() const
-    { return m_xmax - m_xmin; }
+    {
+        return m_xmax - m_xmin;
+    }
 
     inline value_type
     height() const
-    { return m_ymax - m_ymin; }
+    {
+        return m_ymax - m_ymin;
+    }
 
     point_type
     centroid() const
@@ -134,10 +143,8 @@ public:
     contains(const point_type& point) const
     {
         return (
-            (point.first >= m_xmin) &&
-            (point.first <= m_xmax) &&
-            (point.second >= m_ymin) &&
-            (point.second <= m_ymax)
+            (point.first >= m_xmin) && (point.first <= m_xmax) && (point.second >= m_ymin)
+            && (point.second <= m_ymax)
         );
     }
 
@@ -151,9 +158,7 @@ public:
         value_type h = height() / 2;
 
         return quad<quadrect>(
-            {m_xmin, m_ymin, w, h},
-            {m_xmin, m_ymin + h, w, h},
-            {m_xmin + w, m_ymin, w, h},
+            {m_xmin, m_ymin, w, h}, {m_xmin, m_ymin + h, w, h}, {m_xmin + w, m_ymin, w, h},
             {m_xmin + w, m_ymin + h, w, h}
         );
     }
@@ -173,7 +178,7 @@ public:
     }
 
     friend std::ostream&
-    operator<< (std::ostream& os, const quadrect& rect)
+    operator<<(std::ostream& os, const quadrect& rect)
     {
         os << "QuadRect(" << rect.m_xmin << ", " << rect.m_ymin << ", ";
         os << rect.width() << ", " << rect.height() << ")";
@@ -181,7 +186,6 @@ public:
     }
 
 private:
-
     value_type m_xmin, m_ymin, m_xmax, m_ymax;
 };
 

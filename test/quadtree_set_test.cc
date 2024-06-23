@@ -3,8 +3,8 @@
 
 #include <unordered_set>
 
-#include <fmt/format.h>
 #include <boost/test/included/unit_test.hpp>
+#include <fmt/format.h>
 
 #include <torch_geopooling.h>
 
@@ -146,12 +146,9 @@ BOOST_AUTO_TEST_CASE(quadtree_set_find_terminal_group)
 
     for (auto it = set.find_terminal_group(point1); it != set.end(); ++it) {
         Tile tile = it->tile();
-        bool is_terminal = !(
-            set.contains(tile.child(0, 0)) ||
-            set.contains(tile.child(0, 1)) ||
-            set.contains(tile.child(1, 0)) ||
-            set.contains(tile.child(1, 1))
-        );
+        bool is_terminal
+            = !(set.contains(tile.child(0, 0)) || set.contains(tile.child(0, 1))
+                || set.contains(tile.child(1, 0)) || set.contains(tile.child(1, 1)));
 
         BOOST_REQUIRE_MESSAGE(is_terminal, fmt::format("tile {} is not terminal", tile));
         nodes1.insert(tile);
@@ -166,12 +163,9 @@ BOOST_AUTO_TEST_CASE(quadtree_set_find_terminal_group)
 
     for (auto it = set.find_terminal_group(point2); it != set.end(); ++it) {
         Tile tile = it->tile();
-        bool is_terminal = !(
-            set.contains(tile.child(0, 0)) ||
-            set.contains(tile.child(0, 1)) ||
-            set.contains(tile.child(1, 0)) ||
-            set.contains(tile.child(1, 1))
-        );
+        bool is_terminal
+            = !(set.contains(tile.child(0, 0)) || set.contains(tile.child(0, 1))
+                || set.contains(tile.child(1, 0)) || set.contains(tile.child(1, 1)));
 
         BOOST_REQUIRE_MESSAGE(is_terminal, fmt::format("tile {} is not terminal", tile));
         nodes2.insert(tile);
@@ -211,8 +205,7 @@ BOOST_AUTO_TEST_CASE(quadtree_set_missing_parent)
     };
 
     BOOST_CHECK_THROW(
-        quadtree_set(tiles.begin(), tiles.end(), quadrect(0.0, 0.0, 10.0, 10.0)),
-        value_error
+        quadtree_set(tiles.begin(), tiles.end(), quadrect(0.0, 0.0, 10.0, 10.0)), value_error
     );
 }
 
