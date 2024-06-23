@@ -17,9 +17,9 @@
 #include <array>
 #include <functional>
 #include <iterator>
+#include <queue>
 #include <unordered_map>
 #include <vector>
-#include <queue>
 
 #include <ATen/Dispatch.h>
 #include <ATen/Functions.h>
@@ -52,10 +52,10 @@ quad_pool2d(
 )
 {
     auto options = quadtree_options()
-        .max_terminal_nodes(max_terminal_nodes)
-        .max_depth(max_depth)
-        .precision(precision)
-        .capacity(capacity);
+                       .max_terminal_nodes(max_terminal_nodes)
+                       .max_depth(max_depth)
+                       .precision(precision)
+                       .capacity(capacity);
 
     auto op = quadpool_op("quad_pool2d", exterior, options, /*training=*/training);
     auto [tiles_out, weight_out] = op.forward(tiles, weight, input);
@@ -94,10 +94,10 @@ quad_pool2d_backward(
 )
 {
     auto options = quadtree_options()
-        .max_terminal_nodes(max_terminal_nodes)
-        .max_depth(max_depth)
-        .precision(precision)
-        .capacity(capacity);
+                       .max_terminal_nodes(max_terminal_nodes)
+                       .max_depth(max_depth)
+                       .precision(precision)
+                       .capacity(capacity);
 
     quadpool_op op("quad_pool2d_backward", exterior, options, /*training=*/false);
     op.forward(tiles, weight, input);
@@ -136,10 +136,10 @@ max_quad_pool2d(
 )
 {
     auto options = quadtree_options()
-        .max_terminal_nodes(max_terminal_nodes)
-        .max_depth(max_depth)
-        .precision(precision)
-        .capacity(capacity);
+                       .max_terminal_nodes(max_terminal_nodes)
+                       .max_depth(max_depth)
+                       .precision(precision)
+                       .capacity(capacity);
 
     using coordinate_type = double;
     using result_type = torch::Tensor;
@@ -162,10 +162,7 @@ max_quad_pool2d(
         return max_tensor;
     };
 
-    stat_op_type op(
-        "max_quad_pool2d",
-        init_fn, stat_fn, exterior, options, /*training=*/training
-    );
+    stat_op_type op("max_quad_pool2d", init_fn, stat_fn, exterior, options, /*training=*/training);
 
     auto [tiles_out, weight_out] = op.forward(tiles, weight, input);
 
@@ -207,10 +204,10 @@ max_quad_pool2d_backward(
 )
 {
     auto options = quadtree_options()
-        .max_terminal_nodes(max_terminal_nodes)
-        .max_depth(max_depth)
-        .precision(precision)
-        .capacity(capacity);
+                       .max_terminal_nodes(max_terminal_nodes)
+                       .max_depth(max_depth)
+                       .precision(precision)
+                       .capacity(capacity);
 
     using coordinate_type = double;
     using result_type = std::tuple<torch::Tensor, torch::Tensor>;
@@ -250,8 +247,7 @@ max_quad_pool2d_backward(
     };
 
     stat_op_type op(
-        "max_quad_pool2d_backward",
-        init_fn, stat_fn, exterior, options, /*training=*/false
+        "max_quad_pool2d_backward", init_fn, stat_fn, exterior, options, /*training=*/false
     );
 
     op.forward(tiles, weight, input);
@@ -298,10 +294,10 @@ avg_quad_pool2d(
 )
 {
     auto options = quadtree_options()
-        .max_terminal_nodes(max_terminal_nodes)
-        .max_depth(max_depth)
-        .precision(precision)
-        .capacity(capacity);
+                       .max_terminal_nodes(max_terminal_nodes)
+                       .max_depth(max_depth)
+                       .precision(precision)
+                       .capacity(capacity);
 
     using coordinate_type = double;
     using result_type = std::tuple<torch::Tensor, torch::Tensor>;
@@ -330,10 +326,7 @@ avg_quad_pool2d(
         return std::make_tuple(sum, count);
     };
 
-    stat_op_type op(
-        "avg_quad_pool2d",
-        init_fn, stat_fn, exterior, options, /*training=*/training
-    );
+    stat_op_type op("avg_quad_pool2d", init_fn, stat_fn, exterior, options, /*training=*/training);
 
     auto [tiles_out, weight_out] = op.forward(tiles, weight, input);
 
@@ -375,10 +368,10 @@ avg_quad_pool2d_backward(
 )
 {
     auto options = quadtree_options()
-        .max_terminal_nodes(max_terminal_nodes)
-        .max_depth(max_depth)
-        .precision(precision)
-        .capacity(capacity);
+                       .max_terminal_nodes(max_terminal_nodes)
+                       .max_depth(max_depth)
+                       .precision(precision)
+                       .capacity(capacity);
 
     auto weight_options = weight.options();
 
@@ -404,8 +397,7 @@ avg_quad_pool2d_backward(
     };
 
     stat_op_type op(
-        "avg_quad_pool2d_backward",
-        init_fn, stat_fn, exterior, options, /*training=*/false
+        "avg_quad_pool2d_backward", init_fn, stat_fn, exterior, options, /*training=*/false
     );
 
     op.forward(tiles, weight, input);
@@ -424,11 +416,7 @@ avg_quad_pool2d_backward(
 
             auto count = op.m_stats.at(node.tile().parent());
 
-            for (
-                auto node = op.m_set.find_terminal_group(point);
-                node != op.m_set.end();
-                ++node
-            ) {
+            for (auto node = op.m_set.find_terminal_group(point); node != op.m_set.end(); ++node) {
                 auto index = op.m_indices.at(node->tile());
                 if (index >= begin && index < end) {
                     grad_weight[index] += grad_output[input_index] / count;

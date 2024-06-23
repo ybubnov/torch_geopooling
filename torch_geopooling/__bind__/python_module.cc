@@ -9,7 +9,8 @@
 namespace torch_geopooling {
 
 
-PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
+PYBIND11_MODULE(TORCH_EXTENSION_NAME, m)
+{
     m.def("quad_pool2d", &quad_pool2d);
     m.def("quad_pool2d_backward", &quad_pool2d_backward);
 

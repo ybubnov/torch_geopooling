@@ -11,22 +11,19 @@
 
 #include <torch_geopooling/exception.h>
 #include <torch_geopooling/functional.h>
-#include <torch_geopooling/tile.h>
 #include <torch_geopooling/quadrect.h>
 #include <torch_geopooling/quadtree_node.h>
 #include <torch_geopooling/quadtree_options.h>
+#include <torch_geopooling/tile.h>
 
 
 namespace torch_geopooling {
 
 
-template
-<typename Coordinate>
-class quadtree_set_iterator;
+template <typename Coordinate> class quadtree_set_iterator;
 
 
-template<typename Coordinate>
-class quadtree_set {
+template <typename Coordinate> class quadtree_set {
 public:
     using key_type = std::pair<Coordinate, Coordinate>;
     using key_array_type = std::array<Coordinate, 2>;
@@ -42,8 +39,7 @@ public:
     using callback_type = std::function<void(Tile, Tile)>;
 
     quadtree_set(
-        const exterior_type& exterior,
-        std::optional<quadtree_options> options = std::nullopt
+        const exterior_type& exterior, std::optional<quadtree_options> options = std::nullopt
     )
     : m_nodes(),
       m_options(options.value_or(quadtree_options())),
@@ -56,7 +52,7 @@ public:
         m_nodes.insert(std::make_pair(tile, node));
     }
 
-    template<typename InputIt>
+    template <typename InputIt>
     quadtree_set(
         InputIt first,
         InputIt last,
@@ -85,8 +81,7 @@ public:
             while (parent_tile != Tile::root) {
                 if (auto n = m_nodes.find(parent_tile); n == m_nodes.end()) {
                     throw value_error(
-                        "quadtree_set: tile {} does not have a parent {}",
-                        node_tile, parent_tile
+                        "quadtree_set: tile {} does not have a parent {}", node_tile, parent_tile
                     );
                 }
                 parent_tile = parent_tile.parent();
@@ -103,23 +98,31 @@ public:
         std::optional<quadtree_options> options = std::nullopt
     )
     : quadtree_set(exterior_type(xywh), options)
-    { }
+    {}
 
     iterator
     begin()
-    { return iterator(this, Tile::root); }
+    {
+        return iterator(this, Tile::root);
+    }
 
     iterator
     end()
-    { return iterator(); }
+    {
+        return iterator();
+    }
 
     iterator
     ibegin() const
-    { return iterator(this, Tile::root, true); }
+    {
+        return iterator(this, Tile::root, true);
+    }
 
     iterator
     iend() const
-    { return iterator(); }
+    {
+        return iterator();
+    }
 
     const exterior_type
     exterior() const
@@ -130,7 +133,9 @@ public:
 
     const quadtree_options
     options() const
-    { return m_options; }
+    {
+        return m_options;
+    }
 
     bool
     contains(const key_type& point) const
@@ -166,7 +171,7 @@ public:
         insert(key_type(key[0], key[1]), cb);
     }
 
-    template<typename InputIt>
+    template <typename InputIt>
     void
     insert(InputIt first, InputIt last, std::optional<callback_type> cb = std::nullopt)
     {
@@ -188,10 +193,7 @@ public:
     ///
     /// \return The iterator over a group of terminal nodes.
     iterator
-    find_terminal_group(
-        const key_type& point,
-        std::optional<std::size_t> max_depth = std::nullopt
-    )
+    find_terminal_group(const key_type& point, std::optional<std::size_t> max_depth = std::nullopt)
     {
         assert_contains(point);
 
@@ -205,8 +207,7 @@ public:
 
     iterator
     find_terminal_group(
-        const key_array_type& point,
-        std::optional<std::size_t> max_depth = std::nullopt
+        const key_array_type& point, std::optional<std::size_t> max_depth = std::nullopt
     )
     {
         return find_terminal_group(key_type(point[0], point[1]), max_depth);
@@ -268,7 +269,9 @@ public:
 
     std::size_t
     total_depth() const
-    { return m_total_depth; }
+    {
+        return m_total_depth;
+    }
 
     std::size_t
     size() const
@@ -298,8 +301,8 @@ private:
     {
         if (!contains(point)) {
             throw value_error(
-                "quadtree_set: point ({}, {}) is outside of exterior geometry",
-                point.first, point.second
+                "quadtree_set: point ({}, {}) is outside of exterior geometry", point.first,
+                point.second
             );
         }
     }
@@ -308,10 +311,8 @@ private:
     has_children(const Tile& tile) const
     {
         return (
-            contains(tile.child(0, 0)) ||
-            contains(tile.child(0, 1)) ||
-            contains(tile.child(1, 0)) ||
-            contains(tile.child(1, 1))
+            contains(tile.child(0, 0)) || contains(tile.child(0, 1)) || contains(tile.child(1, 0))
+            || contains(tile.child(1, 1))
         );
     }
 
@@ -320,17 +321,12 @@ private:
     {
         // Subdivision increases the number of terminal nodes by 3, which might not be
         // possible to do, since it will break the promised limit of terminal nodes.
-        auto full = (
-            m_options.hash_max_terminal_nodes() &&
-            (m_num_terminal_nodes + 3) >= m_options.max_terminal_nodes()
-        );
+        auto full
+            = (m_options.hash_max_terminal_nodes()
+               && (m_num_terminal_nodes + 3) >= m_options.max_terminal_nodes());
 
-        if (
-            full ||
-            node.size() <= m_options.capacity() ||
-            node.tile().z() >= m_options.max_depth() ||
-            has_children(node.tile())
-        ) {
+        if (full || node.size() <= m_options.capacity() || node.tile().z() >= m_options.max_depth()
+            || has_children(node.tile())) {
             return;
         }
 
@@ -364,9 +360,7 @@ private:
 /// terminal nodes of a quadtree.
 ///
 /// Effectively iterator utilizes breadth-first graph traversal algorithm.
-template<typename Coordinate>
-class quadtree_set_iterator
-{
+template <typename Coordinate> class quadtree_set_iterator {
 public:
     using iterator_category = std::forward_iterator_tag;
 
@@ -378,8 +372,7 @@ public:
 
     using pointer = value_type*;
 
-    explicit
-    quadtree_set_iterator(
+    explicit quadtree_set_iterator(
         const quadtree_set<Coordinate>* set,
         const Tile tile = Tile::root,
         bool include_internal = false
@@ -396,21 +389,27 @@ public:
     : m_queue(),
       m_set(nullptr),
       m_include_internal(false)
-    { }
+    {}
 
     // TODO: remember the size of a quadtree and throw exception, if size of the underlying
     // set was changed by insert operation.
     iterator&
     operator++()
-    { return next(); }
+    {
+        return next();
+    }
 
     reference
     operator*()
-    { return get(); }
+    {
+        return get();
+    }
 
     pointer
     operator->()
-    { return &get(); }
+    {
+        return &get();
+    }
 
     bool
     operator!=(const iterator& rhs)

@@ -1,7 +1,7 @@
 #pragma once
 
-#include <optional>
 #include <limits>
+#include <optional>
 
 
 namespace torch_geopooling {
@@ -14,15 +14,19 @@ struct quadtree_options {
       m_capacity(1),
       m_max_terminal_nodes(std::nullopt),
       m_precision(std::nullopt)
-    { }
+    {}
 
     bool
     hash_max_terminal_nodes() const noexcept
-    { return m_max_terminal_nodes.has_value(); }
+    {
+        return m_max_terminal_nodes.has_value();
+    }
 
     bool
     has_precision() const noexcept
-    { return m_precision.has_value(); }
+    {
+        return m_precision.has_value();
+    }
 
     quadtree_options
     max_depth(std::optional<std::size_t> max_depth) const noexcept
@@ -66,19 +70,27 @@ struct quadtree_options {
 
     std::size_t
     max_depth() const noexcept
-    { return m_max_depth; }
+    {
+        return m_max_depth;
+    }
 
     std::size_t
     capacity() const noexcept
-    { return m_capacity; }
+    {
+        return m_capacity;
+    }
 
     std::size_t
     max_terminal_nodes() const noexcept
-    { return m_max_terminal_nodes.value_or(std::numeric_limits<std::size_t>::max()); }
+    {
+        return m_max_terminal_nodes.value_or(std::numeric_limits<std::size_t>::max());
+    }
 
     std::size_t
     precision()
-    { return m_precision.value_or(std::numeric_limits<std::size_t>::digits10); }
+    {
+        return m_precision.value_or(std::numeric_limits<std::size_t>::digits10);
+    }
 
 private:
     std::size_t m_max_depth;
@@ -88,19 +100,27 @@ private:
 
     void
     set_max_depth(std::size_t max_depth)
-    { m_max_depth = max_depth; }
+    {
+        m_max_depth = max_depth;
+    }
 
     void
     set_capacity(std::size_t capacity)
-    { m_capacity = capacity; }
+    {
+        m_capacity = capacity;
+    }
 
     void
     set_max_terminal_nodes(std::size_t max_terminal_nodes)
-    { m_max_terminal_nodes = max_terminal_nodes; }
+    {
+        m_max_terminal_nodes = max_terminal_nodes;
+    }
 
     void
     set_precision(std::size_t precision)
-    { m_precision = precision; }
+    {
+        m_precision = precision;
+    }
 };
 
 

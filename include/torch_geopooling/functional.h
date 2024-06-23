@@ -6,7 +6,7 @@
 namespace std {
 
 
-template<typename SizeT, typename T>
+template <typename SizeT, typename T>
 void
 hash_combine(SizeT& seed, T value)
 {
@@ -15,13 +15,12 @@ hash_combine(SizeT& seed, T value)
 }
 
 
-template<typename T>
-struct hash<pair<T, T>>
-{
+template <typename T> struct hash<pair<T, T>> {
     using argument_type = pair<T, T>;
 
     size_t
-    operator()(const argument_type& argument) const noexcept {
+    operator()(const argument_type& argument) const noexcept
+    {
         size_t seed = 0;
         hash_combine(seed, argument.first);
         hash_combine(seed, argument.second);
@@ -30,7 +29,7 @@ struct hash<pair<T, T>>
 };
 
 
-template<class Arithmetic1, class Arithmetic2>
+template <class Arithmetic1, class Arithmetic2>
 Arithmetic1
 round(Arithmetic1 value, Arithmetic2 precision)
 {
@@ -39,7 +38,7 @@ round(Arithmetic1 value, Arithmetic2 precision)
 }
 
 
-template<class Arithmetic>
+template <class Arithmetic>
 long
 round(long value, Arithmetic precision)
 {
@@ -47,7 +46,7 @@ round(long value, Arithmetic precision)
 }
 
 
-template<class Arithmetic1, class Arithmetic2>
+template <class Arithmetic1, class Arithmetic2>
 pair<Arithmetic1, Arithmetic1>
 round(const pair<Arithmetic1, Arithmetic1>& pair, Arithmetic2 precision)
 {
