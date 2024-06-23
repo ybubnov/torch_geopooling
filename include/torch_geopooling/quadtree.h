@@ -28,8 +28,7 @@ template <
     typename Coordinate,
     typename T = long,
     class Container = std::unordered_map<std::pair<Coordinate, Coordinate>, T>>
-class quadtree
-{
+class quadtree {
 public:
     using key_type = std::pair<Coordinate, Coordinate>;
 
@@ -278,8 +277,7 @@ private:
 
 
 template <typename Coordinate, typename T, class Container>
-class quadtree_iterator
-{
+class quadtree_iterator {
 public:
     using iterator_category = std::forward_iterator_tag;
 

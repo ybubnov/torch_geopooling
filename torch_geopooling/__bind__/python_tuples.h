@@ -37,8 +37,7 @@ namespace pybind11::detail {
 
 
 template <>
-struct TORCH_PYTHON_API type_caster<c10::ArrayRef<double>>
-{
+struct TORCH_PYTHON_API type_caster<c10::ArrayRef<double>> {
 public:
     PYBIND11_TYPE_CASTER(c10::ArrayRef<double>, _("tuple[float, ...]"));
 

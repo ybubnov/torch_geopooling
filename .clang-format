@@ -22,6 +22,4 @@ AlwaysBreakTemplateDeclarations: Yes
 BreakBeforeBraces: Custom
 BraceWrapping:
   AfterFunction: true
-  AfterClass: true
-  AfterStruct: true
   SplitEmptyFunction: false

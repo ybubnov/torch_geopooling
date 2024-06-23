@@ -7,8 +7,7 @@
 
 
 template <typename T>
-struct fmt::formatter<std::array<T, 2>>
-{
+struct fmt::formatter<std::array<T, 2>> {
     template <typename ParseContext>
     constexpr auto
     parse(ParseContext& context)

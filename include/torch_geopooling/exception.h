@@ -8,8 +8,7 @@
 namespace torch_geopooling {
 
 
-class exception : public std::exception
-{
+class exception : public std::exception {
 private:
     std::string m_msg;
 
@@ -38,8 +37,7 @@ exception::what() const noexcept(true)
 inline exception::~exception() {}
 
 
-class value_error : public exception
-{
+class value_error : public exception {
 public:
     explicit value_error(const std::string& s);
 
@@ -55,8 +53,7 @@ inline value_error::value_error(const std::string& s)
 {}
 
 
-class out_of_range : public exception
-{
+class out_of_range : public exception {
 public:
     explicit out_of_range(const std::string& s);
 

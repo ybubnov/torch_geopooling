@@ -38,8 +38,7 @@ namespace torch_geopooling {
 /// parameter `N` defines the size of the arrays. Iterator takes only the first `N` elements
 /// from the second dimension to the output result.
 template <typename Scalar, int N>
-class tensor_iterator2d
-{
+class tensor_iterator2d {
 public:
     using iterator_category = std::forward_iterator_tag;
 
@@ -126,8 +125,7 @@ private:
 /// Additionally, it checks validity of input data (tiles, indices, weight, bias, etc.), to
 /// ensure it can be used to compute the operation.
 template <typename Coordinate = double>
-struct quadpool_op
-{
+struct quadpool_op {
     using tiles_iterator = tensor_iterator2d<int64_t, 3>;
     using input_iterator = tensor_iterator2d<Coordinate, 2>;
 
@@ -319,8 +317,7 @@ private:
 /// since `m_stats` is not yet created. And `stat` function is called during construction of
 /// `m_stats`.
 template <typename Coordinate = double, typename Statistic = torch::Tensor>
-struct quadpool_stat_op : public quadpool_op<Coordinate>
-{
+struct quadpool_stat_op : public quadpool_op<Coordinate> {
     using base = quadpool_op<Coordinate>;
     using tensor_reference = const torch::Tensor&;
 

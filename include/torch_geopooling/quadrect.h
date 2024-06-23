@@ -12,8 +12,7 @@ namespace torch_geopooling {
 
 
 template <typename T>
-class quad
-{
+class quad {
 public:
     using value_type = T;
 
@@ -67,8 +66,7 @@ private:
 
 
 template <typename T>
-class quadrect
-{
+class quadrect {
 public:
     using value_type = T;
     using point_type = std::pair<T, T>;
