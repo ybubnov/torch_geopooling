@@ -205,7 +205,7 @@ struct quadpool_op
         if (m_training) {
             auto input_it = input_iterator(input);
 
-            m_set.insert(input_it.begin(), input_it.end(), [&](Tile parent_tile, Tile child_tile) {
+            m_set.insert(input_it.begin(), input_it.end(), [&](const Tile parent_tile, const Tile child_tile) {
                 auto value = m_values.at(parent_tile);
                 int64_t index = m_indices.size();
 
