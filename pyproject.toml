@@ -60,7 +60,7 @@ requires = [
   "setuptools ~= 69.5.1",
   "sympy >= 1.12",
   "toml >= 0.7.0; python_version < '3.11'",
-  "torch >= 2.2.0+cpu, < 2.3.0+cpu; sys_platform == 'linux'",
+  "torch >= 2.2.0, < 2.3.0; sys_platform == 'linux'",
   "torch >= 2.2.0, < 2.3.0; sys_platform == 'darwin' or sys_platform == 'win'",
   "typing-extensions >= 4.8.0",
   "wheel >= 0.43.0"

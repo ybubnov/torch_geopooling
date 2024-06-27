@@ -22,9 +22,6 @@ jobs:
       with:
         python-version: "${{ matrix.python-version }}"
 
-    - name: Upgrade PIP
-      run: pip install --upgrade pip
-
     - name: Compile Python extension
       run: pip install --verbose --editable '.[test]'
 
