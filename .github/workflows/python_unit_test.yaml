@@ -23,6 +23,7 @@ jobs:
         python-version: "${{ matrix.python-version }}"
 
     - name: Compile Python extension
+      env: PIP_CONFIG_FILE="${{ github.workspace }}/pip.conf
       run: pip install --verbose --editable '.[test]'
 
     - name: Run Python unit-tests
