@@ -73,7 +73,7 @@ quad_pool2d_backward(
 ///
 /// Terminal node group is a set of nodes in a lookup quadtree that share the common parent.
 ///
-/// \return tuple of two elements: (tiles, weights).
+/// \return tuple of two elements: (tiles, weights, values).
 std::tuple<torch::Tensor, torch::Tensor, torch::Tensor>
 max_quad_pool2d(
     const torch::Tensor& tiles,
