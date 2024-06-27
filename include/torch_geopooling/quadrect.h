@@ -135,7 +135,7 @@ public:
 
     /// Constructs a quadrect from an initializer list of 4 values (xmin, ymin, width, height).
     ///
-    /// \param list initalizer list containing xmin, ymin, width, and height.
+    /// \param list initializer list containing xmin, ymin, width, and height.
     quadrect(const std::initializer_list<value_type>& list)
     : quadrect(std::vector(list))
     {}
