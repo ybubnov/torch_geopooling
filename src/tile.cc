@@ -35,6 +35,12 @@ Tile::Tile(std::size_t z, std::size_t x, std::size_t y)
   m_x(x),
   m_y(y)
 {
+    if (m_z >= sizeof(std::size_t) * 8) {
+        throw value_error(
+            "Tile: z-scale ({}) is too large (maximum is {})", m_z, sizeof(std::size_t) * 8
+        );
+    }
+
     std::size_t max_size = 1 << m_z;
     if (x >= max_size) {
         throw value_error(
