@@ -324,7 +324,7 @@ private:
         // Subdivision increases the number of terminal nodes by 3, which might not be
         // possible to do, since it will break the promised limit of terminal nodes.
         auto full
-            = (m_options.hash_max_terminal_nodes()
+            = (m_options.has_max_terminal_nodes()
                && (m_num_terminal_nodes + 3) >= m_options.max_terminal_nodes());
 
         if (full || node.size() <= m_options.capacity() || node.tile().z() >= m_options.max_depth()
