@@ -33,3 +33,6 @@
 
 # Python cache
 *.pyc
+
+# Sphinx generated documentation
+docs/reference/generated

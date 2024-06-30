@@ -76,7 +76,7 @@ def regular_tiling(
         exterior: Exterior (bounding box) of the quadtree. For example, for geospatial
             coordinates, this will be `(-180.0, -90.0, 360.0, 180.0)`.
         z: Zoom level of the tiles.
-        internal: When `True`, returns internal tiles (nodes) of the Quadtree up to a root
+        internal: When `True`, returns internal tiles (nodes) of the quadtree up to a root
             tile (0,0,0).
 
     Returns:

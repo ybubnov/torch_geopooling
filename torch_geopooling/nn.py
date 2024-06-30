@@ -69,7 +69,7 @@ class _AdaptiveQuadPool(nn.Module):
 
 
 class AdaptiveQuadPool2d(_AdaptiveQuadPool):
-    """Dynamic lookup index over Quadtree decomposition of input 2D coordinates.
+    """Adaptive lookup index over quadtree decomposition of input 2D coordinates.
 
     This module constructs an internal lookup quadtree to organize closely situated 2D points.
     Each terminal node in the resulting quadtree is paired with a weight. Thus, when providing
@@ -78,6 +78,8 @@ class AdaptiveQuadPool2d(_AdaptiveQuadPool):
 
     :param feature_dim: Size of each feature vector.
     :param exterior: Geometrical boundary of the learning space in (X, Y, W, H) format.
+    :param max_terminal_nodes: Optional maximum number of terminal nodes in a quadtree. Once a
+        maximum is reached, internal nodes are no longer sub-divided and tree stops growing.
     :param max_depth: Maximum depth of the quadtree. Default: 17.
     :param capacity: Maximum number of inputs, after which a quadtree's node is subdivided and
         depth of the tree grows. Default: 1.
@@ -111,7 +113,7 @@ class AdaptiveQuadPool2d(_AdaptiveQuadPool):
 
 
 class AdaptiveMaxQuadPool2d(_AdaptiveQuadPool):
-    """Dynamic maximum pooling over Quadtree decomposition of input 2D coordinates.
+    """Adaptive maximum pooling over quadtree decomposition of input 2D coordinates.
 
     This module constructs an internal lookup quadtree to organize closely situated 2D points.
     Each terminal node in the resulting quadtree is assigned a weight value. For each input
@@ -123,6 +125,8 @@ class AdaptiveMaxQuadPool2d(_AdaptiveQuadPool):
 
     :param feature_dim: Size of each feature vector.
     :param exterior: Geometrical boundary of the learning space in (X, Y, W, H) format.
+    :param max_terminal_nodes: Optional maximum number of terminal nodes in a quadtree. Once a
+        maximum is reached, internal nodes are no longer sub-divided and tree stops growing.
     :param max_depth: Maximum depth of the quadtree. Default: 17.
     :param capacity: Maximum number of inputs, after which a quadtree's node is subdivided and
         depth of the tree grows. Default: 1.
@@ -130,10 +134,10 @@ class AdaptiveMaxQuadPool2d(_AdaptiveQuadPool):
 
     Examples:
 
-        >>> pool = nn.AdaptiveMaxQuadPool2d(3, (-10, -5, 20, 10), max_depth=5)
-        >>> # Create 2D coordinates and feature vector associated with them.
-        >>> input = torch.rand((2048, 2), dtype=torch.float64) * 10 - 5
-        >>> output = pool(input)
+    >>> pool = nn.AdaptiveMaxQuadPool2d(3, (-10, -5, 20, 10), max_depth=5)
+    >>> # Create 2D coordinates and feature vector associated with them.
+    >>> input = torch.rand((2048, 2), dtype=torch.float64) * 10 - 5
+    >>> output = pool(input)
     """
 
     def forward(self, input: Tensor) -> Tensor:
@@ -188,7 +192,7 @@ class _QuadPool(nn.Module):
         self.precision = precision
 
         # Generate regular tiling for the provided polygon and build from those
-        # tiles a Quadtree from terminal nodes all way up to the root node.
+        # tiles a quadtree from terminal nodes all way up to the root node.
         tiles_iter = regular_tiling(
             polygon, Exterior.from_tuple(exterior), z=max_depth, internal=True
         )
@@ -215,6 +219,8 @@ class _QuadPool(nn.Module):
 
 
 class QuadPool2d(_QuadPool):
+    """Lookup index over quadtree decomposition of input 2D coordinates."""
+
     def forward(self, input: Tensor) -> Tensor:
         result = F.quad_pool2d(
             self.tiles,
