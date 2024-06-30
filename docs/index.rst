@@ -6,11 +6,12 @@ TBD.
 
 .. toctree::
    :hidden:
-   :caption: User Guide
+   :caption: Documentation
    :maxdepth: 5
 
-   user_guide/index
-   api
+   guide/index
+   reference/index
+
 
 .. toctree::
    :hidden:

@@ -8,6 +8,7 @@ copyright = f"2024-present, {author}"
 need_sphinx = "4.4"
 extensions = [
     "sphinx.ext.autodoc",
+    "sphinx.ext.autosummary",
     "sphinx.ext.doctest",
     "sphinx.ext.intersphinx",
 ]
@@ -22,3 +23,4 @@ pygments_style = "default"
 
 # Options for HTML output
 html_theme = "furo"
+templates_path = ["_templates"]
