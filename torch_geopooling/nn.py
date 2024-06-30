@@ -220,8 +220,8 @@ class _QuadPool(nn.Module):
 
 class QuadPool2d(_QuadPool):
     """Lookup index over quadtree decomposition of input 2D coordinates."""
+
     def forward(self, input: Tensor) -> Tensor:
-        """DOCUMENTATION"""
         result = F.quad_pool2d(
             self.tiles,
             self.weight,

@@ -19,4 +19,3 @@ Geometry Transformations
    :template: class.rst
 
    torch_geopooling.transforms.TileWKT
-
