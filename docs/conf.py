@@ -11,6 +11,7 @@ extensions = [
     "sphinx.ext.autosummary",
     "sphinx.ext.doctest",
     "sphinx.ext.intersphinx",
+    "sphinx.ext.napoleon",
 ]
 
 # The documentation is in English language.

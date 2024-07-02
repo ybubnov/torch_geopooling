@@ -42,11 +42,12 @@ class TileWKT:
 
     Module returns a tile geometry in WKT format, which comprises a polygon.
 
-    :param exterior: Exterior coordinates in (X, Y, W, H) format. The exterior is used to calculate
-        boundaries of a tile to produce a final WKT.
-    :param precision: A precision of the resulting geometry, digits after the decimal point.
-    :param internal: When `True`, output includes internal nodes of the quadtree tiles.
-        Otherwise (default) returns only geometry of terminal nodes.
+    Args:
+        exterior: Exterior coordinates in (X, Y, W, H) format. The exterior is used to calculate
+            boundaries of a tile to produce a final WKT.
+        precision: A precision of the resulting geometry, digits after the decimal point.
+        internal: When `True`, output includes internal nodes of the quadtree tiles.
+            Otherwise (default) returns only geometry of terminal nodes.
     """
 
     def __init__(
