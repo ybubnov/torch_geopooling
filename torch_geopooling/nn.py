@@ -23,6 +23,7 @@ from torch_geopooling import functional as F
 from torch_geopooling.tiling import Exterior, ExteriorTuple, regular_tiling
 
 __all__ = [
+    "AdaptiveAvgQuadPool2d",
     "AdaptiveQuadPool2d",
     "AdaptiveMaxQuadPool2d",
     "AvgQuadPool2d",
@@ -34,7 +35,40 @@ __all__ = [
 _Exterior = Union[Exterior, ExteriorTuple]
 
 
+_exterior_doc = """
+    Note:
+        Input coordinates must be within a specified exterior geometry (including boundaries).
+        For input coordinates outsize of the specified exterior, module throws an exception.
+"""
+
+
+_terminal_group_doc = """
+    Note:
+        A **terminal group** refers to a collection of terminal nodes within the quadtree that
+        share the same parent tile.
+"""
+
+
 class _AdaptiveQuadPool(nn.Module):
+    __doc__ = f"""
+    Args:
+        feature_dim: Size of each feature vector.
+        exterior: Geometrical boundary of the learning space in (X, Y, W, H) format.
+        max_terminal_nodes: Optional maximum number of terminal nodes in a quadtree. Once a
+            maximum is reached, internal nodes are no longer sub-divided and tree stops growing.
+        max_depth: Maximum depth of the quadtree. Default: 17.
+        capacity: Maximum number of inputs, after which a quadtree's node is subdivided and
+            depth of the tree grows. Default: 1.
+        precision: Optional rounding of the input coordinates. Default: 7.
+
+    Shape:
+        - Input: :math:`(*, 2)`, where 2 comprises longitude and latitude coordinates.
+        - Output: :math:`(*, H)`, where * is the input shape and :math:`H = \\text{{feature_dim}}`.
+
+    {_exterior_doc}
+    {_terminal_group_doc}
+    """
+
     def __init__(
         self,
         feature_dim: int,
@@ -69,21 +103,14 @@ class _AdaptiveQuadPool(nn.Module):
 
 
 class AdaptiveQuadPool2d(_AdaptiveQuadPool):
-    """Adaptive lookup index over quadtree decomposition of input 2D coordinates.
+    __doc__ = f"""Adaptive lookup index over quadtree decomposition of input 2D coordinates.
 
     This module constructs an internal lookup quadtree to organize closely situated 2D points.
     Each terminal node in the resulting quadtree is paired with a weight. Thus, when providing
     an input coordinate, the module retrieves the corresponding terminal node and returns its
     associated weight.
 
-    :param feature_dim: Size of each feature vector.
-    :param exterior: Geometrical boundary of the learning space in (X, Y, W, H) format.
-    :param max_terminal_nodes: Optional maximum number of terminal nodes in a quadtree. Once a
-        maximum is reached, internal nodes are no longer sub-divided and tree stops growing.
-    :param max_depth: Maximum depth of the quadtree. Default: 17.
-    :param capacity: Maximum number of inputs, after which a quadtree's node is subdivided and
-        depth of the tree grows. Default: 1.
-    :param precision: Optional rounding of the input coordinates. Default: 7.
+    {_AdaptiveQuadPool.__doc__}
 
     Examples:
 
@@ -113,24 +140,14 @@ class AdaptiveQuadPool2d(_AdaptiveQuadPool):
 
 
 class AdaptiveMaxQuadPool2d(_AdaptiveQuadPool):
-    """Adaptive maximum pooling over quadtree decomposition of input 2D coordinates.
+    __doc__ = f"""Adaptive maximum pooling over quadtree decomposition of input 2D coordinates.
 
     This module constructs an internal lookup quadtree to organize closely situated 2D points.
-    Each terminal node in the resulting quadtree is assigned a weight value. For each input
-    coordinate, the module queries a "terminal group" of nodes and calculates the maximum value
-    from a `weight` vector associated with these nodes.
+    Each terminal node in the resulting quadtree is paired with a weight. Thus, when providing
+    an input coordinate, the module retrieves a **terminal group** of nodes and calculates the
+    maximum value for each ``feature_dim``.
 
-    A terminal group refers to a collection of terminal nodes within the quadtree that share the
-    same parent as the input coordinate.
-
-    :param feature_dim: Size of each feature vector.
-    :param exterior: Geometrical boundary of the learning space in (X, Y, W, H) format.
-    :param max_terminal_nodes: Optional maximum number of terminal nodes in a quadtree. Once a
-        maximum is reached, internal nodes are no longer sub-divided and tree stops growing.
-    :param max_depth: Maximum depth of the quadtree. Default: 17.
-    :param capacity: Maximum number of inputs, after which a quadtree's node is subdivided and
-        depth of the tree grows. Default: 1.
-    :param precision: Optional rounding of the input coordinates. Default: 7.
+    {_AdaptiveQuadPool.__doc__}
 
     Examples:
 
@@ -157,6 +174,23 @@ class AdaptiveMaxQuadPool2d(_AdaptiveQuadPool):
 
 
 class AdaptiveAvgQuadPool2d(_AdaptiveQuadPool):
+    __doc__ = f"""Adaptive average pooling over quadtree decomposition of input 2D coordinates.
+
+    This module constructs an internal lookup quadtree to organize closely situated 2D points.
+    Each terminal node in the resulting quadtree is paired with a weight. Thus, when providing
+    an input coordinate, the module retrieves a **terminal group** of nodes and calculates an
+    average value for each ``feature_dim``.
+
+    {_AdaptiveQuadPool.__doc__}
+
+    Examples:
+
+    >>> # Create pool with 7 features.
+    >>> pool = nn.AdaptiveAvgQuadPool2d(7, (0, 0, 1, 1), max_depth=12)
+    >>> input = torch.rand((2048, 2), dtype=torch.float64)
+    >>> output = pool(input)
+    """
+
     def forward(self, input: Tensor) -> Tensor:
         result = F.adaptive_avg_quad_pool2d(
             self.weight,
@@ -174,6 +208,28 @@ class AdaptiveAvgQuadPool2d(_AdaptiveQuadPool):
 
 
 class _QuadPool(nn.Module):
+    __doc__ = f"""
+    Args:
+        feature_dim: Size of each feature vector.
+        polygon: Polygon that resembles boundary for the terminal nodes of a quadtree.
+        exterior: Geometrical boundary of the learning space in (X, Y, W, H) format.
+        max_terminal_nodes: Optional maximum number of terminal nodes in a quadtree. Once a
+            maximum is reached, internal nodes are no longer sub-divided and tree stops growing.
+        max_depth: Maximum depth of the quadtree. Default: 17.
+        precision: Optional rounding of the input coordinates. Default: 7.
+
+    Shape:
+        - Input: :math:`(*, 2)`, where 2 comprises longitude and latitude coordinates.
+        - Output: :math:`(*, H)`, where * is the input shape and :math:`H = \\text{{feature_dim}}`.
+
+    {_exterior_doc}
+    {_terminal_group_doc}
+
+    Note:
+        All terminal nodes that have an intersection with the specified polygon boundary are
+        included into the quadtree.
+    """
+
     def __init__(
         self,
         feature_dim: int,
@@ -219,7 +275,18 @@ class _QuadPool(nn.Module):
 
 
 class QuadPool2d(_QuadPool):
-    """Lookup index over quadtree decomposition of input 2D coordinates."""
+    __doc__ = f"""Lookup index over quadtree decomposition of input 2D coordinates.
+
+    This module constructs an internal lookup tree to organize closely situated 2D points using
+    a specified polygon and exterior, where polygon is treated as a *boundary* of terminal
+    nodes of a quadtree.
+
+    Each terminal node in the resulting quadtree is paired with a weight. Thus, when providing
+    an input coordinate, the module retrieves the corresponding terminal node and returns its
+    associated weight.
+
+    {_QuadPool.__doc__}
+    """
 
     def forward(self, input: Tensor) -> Tensor:
         result = F.quad_pool2d(
@@ -238,6 +305,19 @@ class QuadPool2d(_QuadPool):
 
 
 class MaxQuadPool2d(_QuadPool):
+    __doc__ = f"""Maximum pooling over quadtree decomposition of input 2D coordinates.
+
+    This module constructs an internal lookup tree to organize closely situated 2D points using
+    a specified polygon and exterior, where polygon is treated as a *boundary* of terminal nodes
+    of a quadtree.
+
+    Each terminal node in the resulting quadtree is paired with a weight. Thus, when providing
+    an input coordinate, the module retrieves a **terminal group** of nodes and calculates the
+    maximum value for each ``feature_dim``.
+
+    {_QuadPool.__doc__}
+    """
+
     def forward(self, input: Tensor) -> Tensor:
         result = F.max_quad_pool2d(
             self.tiles,
@@ -253,6 +333,19 @@ class MaxQuadPool2d(_QuadPool):
 
 
 class AvgQuadPool2d(_QuadPool):
+    __doc__ = f"""Average pooling over quadtree decomposition of input 2D coordinates.
+
+    This module constructs an internal lookup tree to organize closely situated 2D points using
+    a specified polygon and exterior, where polygon is treated as a *boundary* of terminal
+    nodes of a quadtree.
+
+    Each terminal node in the resulting quadtree is paired with a weight. Thus, when providing
+    an input coordinate, the module retrieves a **terminal group** of nodes and calculates an
+    average value for each ``feature_dim``.
+
+    {_QuadPool.__doc__}
+    """
+
     def forward(self, input: Tensor) -> Tensor:
         result = F.avg_quad_pool2d(
             self.tiles,
