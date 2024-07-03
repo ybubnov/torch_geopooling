@@ -1,8 +1,8 @@
 .. _torch_geopooling:
 .. _torchgeopooling:
 
-Reference
-=========
+API Reference
+=============
 
 .. automodule:: torch_geopooling
 .. currentmodule:: torch_geopooling
@@ -14,4 +14,5 @@ applications using neural networks.
    :maxdepth: 1
 
    nn
+   functional
    transforms
