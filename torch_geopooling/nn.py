@@ -286,6 +286,16 @@ class QuadPool2d(_QuadPool):
     associated weight.
 
     {_QuadPool.__doc__}
+
+    Examples:
+
+    >>> from shapely.geometry import Polygon
+    >>> # Create a pool for squared exterior 100x100 and use only a portion of that
+    >>> # exterior isolated by a square 10x10.
+    >>> poly = Polygon([(0, 0), (10, 0), (10, 10), (0, 10)])
+    >>> pool = nn.QuadPool2d(5, poly, exterior=(0, 0, 100, 100))
+    >>> input = torch.rand((2048, 2), dtype=torch.float64)
+    >>> output = pool(input)
     """
 
     def forward(self, input: Tensor) -> Tensor:
@@ -316,6 +326,14 @@ class MaxQuadPool2d(_QuadPool):
     maximum value for each ``feature_dim``.
 
     {_QuadPool.__doc__}
+
+    Examples:
+
+    >>> from shapely.geometry import Polygon
+    >>> poly = Polygon([(0, 0), (10, 0), (10, 10), (0, 10)])
+    >>> pool = nn.MaxQuadPool2d(3, poly, exterior=(0, 0, 100, 100))
+    >>> input = torch.rand((2048, 2), dtype=torch.float64)
+    >>> output = pool(input)
     """
 
     def forward(self, input: Tensor) -> Tensor:
@@ -344,6 +362,14 @@ class AvgQuadPool2d(_QuadPool):
     average value for each ``feature_dim``.
 
     {_QuadPool.__doc__}
+
+    Examples:
+
+    >>> from shapely.geometry import Polygon
+    >>> poly = Polygon([(0, 0), (10, 0), (10, 10), (0, 10)])
+    >>> pool = nn.AvgQuadPool2d(4, poly, exterior=(0, 0, 100, 100))
+    >>> input = torch.rand((2048, 2), dtype=torch.float64)
+    >>> output = pool(input)
     """
 
     def forward(self, input: Tensor) -> Tensor:
