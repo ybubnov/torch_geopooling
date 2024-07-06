@@ -90,6 +90,9 @@ quote-style = "double"
 indent-style = "space"
 docstring-code-format = true
 
+[tool.codespell]
+skip = "*.ipynb"
+
 
 # Configuration to build wheels for different version of python, operating systems and
 # architectures. See more in documentation: https://cibuildwheel.pypa.io/en/stable/options/
