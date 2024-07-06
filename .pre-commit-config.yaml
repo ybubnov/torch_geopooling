@@ -29,3 +29,4 @@ repos:
   hooks:
     - id: clang-format
       name: "Clang C++ formatting"
+      types_or: [c++, c, cuda]
