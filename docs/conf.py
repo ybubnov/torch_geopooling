@@ -12,6 +12,7 @@ extensions = [
     "sphinx.ext.doctest",
     "sphinx.ext.intersphinx",
     "sphinx.ext.napoleon",
+    "nbsphinx",
 ]
 
 # The documentation is in English language.
