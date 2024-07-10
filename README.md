@@ -17,7 +17,7 @@ including automatic gradient computation.
 
 ## Documentation
 
-The [Torch Geopooling Documetation](https://torch-geopooling.readthedocs.org) contains additional
+The [Torch Geopooling Documentation](https://torch-geopooling.readthedocs.org) contains additional
 details on how to get started with this library as well a few examples of training neural networks
 that use geo-pooling modules.
 
