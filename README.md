@@ -43,7 +43,7 @@ output = pool(input)
 ```
 
 Using regular decomposition module for arbitrary polygon:
-```
+```py
 import torch
 from shapely import Polygon
 from torch_geopooling.nn import QuadPool2d
