@@ -1,5 +1,5 @@
 [project]
-name = "torch_geopooling"
+name = "torch-geopooling"
 version = "1.0.0rc1"
 license = {file = "LICENSE"}
 

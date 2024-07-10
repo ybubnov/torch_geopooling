@@ -7,7 +7,7 @@ assumed that a reader knows fundamentals of the `PyTorch`_ library.
 .. toctree::
    :maxdepth: 1
 
-   getting_started
+   getting_started.ipynb
    house_prices.ipynb
 
 

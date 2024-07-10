@@ -38,7 +38,7 @@ from torch_geopooling.nn import AdaptiveQuadPool2d
 
 # Create 5-feature vector for each node in a decomposition.
 pool = AdaptiveQuadPool2d(5, (-180, -90, 360, 180), max_depth=12, capacity=10)
-input = torch.rand((1024, 2), dtype=torch.float64)
+input = torch.DoubleTensor(1024, 2).uniform_(-90, 90)
 output = pool(input)
 ```
 
@@ -53,8 +53,8 @@ poly = Polygon([(0.0, 0.0), (10.0, 0.0), (10.0, 10.0), (0.0, 10.0)])
 exterior = (-100.0, -100.0, 200.0, 200.0)
 # Create 3-feature vector for each node in a decomposition.
 pool = QuadPool2d(3, poly, exterior, max_depth=10)
-input = torch.DoubleTensor(200, 2).uniform(0.0, 10.0)
-output = pool(output)
+input = torch.DoubleTensor(200, 2).uniform_(0.0, 10.0)
+output = pool(input)
 ```
 
 ## License

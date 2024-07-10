@@ -94,6 +94,11 @@ class _AdaptiveQuadPool(nn.Module):
         weight_size = (self.max_depth, 1 << self.max_depth, 1 << self.max_depth, self.feature_dim)
         self.weight = nn.Parameter(torch.sparse_coo_tensor(size=weight_size, dtype=torch.float64))
 
+    @property
+    def tiles(self) -> torch.Tensor:
+        """Return tiles of the quadtree."""
+        return self.weight.coalesce().detach().indices().t()[:, :-1]
+
     def extra_repr(self) -> str:
         return (
             "{feature_dim}, "
