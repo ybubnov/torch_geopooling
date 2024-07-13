@@ -34,28 +34,9 @@ jobs:
           path: wheelhouse/*.whl
           retention-days: 7
 
-  upload_macos_pypi:
-    needs: [build_wheels]
-    runs-on: ubuntu-latest
-    steps:
       - uses: actions/download-artifact@v4.1.8
         with:
-          name: python-wheels-macos-14
-          path: dist
-
-      - uses: pypa/gh-action-pypi-publish@v1.9.0
-        with:
-          user: __token__
-          password: ${{ secrets.pypi_token }}
-          # repository_url: https://test.pypi.org/legacy/
-
-  upload_linux_pypi:
-    needs: [build_wheels]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/download-artifact@v4.1.8
-        with:
-          name: python-wheels-ubuntu-latest
+          name: python-wheels-${{ matrix.os }}
           path: dist
 
       - uses: pypa/gh-action-pypi-publish@v1.9.0
