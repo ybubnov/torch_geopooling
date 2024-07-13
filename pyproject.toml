@@ -1,6 +1,6 @@
 [project]
 name = "torch-geopooling"
-version = "1.0.0rc2"
+version = "1.0.0rc3"
 license = {file = "LICENSE"}
 
 description = "The geospatial pooling modules for neural networks in PyTorch"
