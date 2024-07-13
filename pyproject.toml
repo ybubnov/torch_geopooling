@@ -1,6 +1,6 @@
 [project]
 name = "torch-geopooling"
-version = "1.0.0rc2"
+version = "1.0.0rc3"
 license = {file = "LICENSE"}
 
 description = "The geospatial pooling modules for neural networks in PyTorch"
@@ -116,4 +116,11 @@ archs = ["arm64"]
 archs = ["aarch64", "x86_64"]
 manylinux-x86_64-image = "manylinux2014"
 manylinux-aarch64-image = "manylinux2014"
-repair-wheel-command = "auditwheel repair --exclude libc10.so --exclude libtorch.so --exclude libtorch_cpu.so --exclude libtorch_python.so -w {dest_dir} {wheel}"
+repair-wheel-command = """\
+    auditwheel repair --only-plat \
+        --exclude libc10.so \
+        --exclude libtorch.so \
+        --exclude libtorch_cpu.so \
+        --exclude libtorch_python.so \
+        -w {dest_dir} {wheel} \
+    """
