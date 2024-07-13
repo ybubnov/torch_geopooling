@@ -117,10 +117,12 @@ archs = ["aarch64", "x86_64"]
 manylinux-x86_64-image = "manylinux2014"
 manylinux-aarch64-image = "manylinux2014"
 repair-wheel-command = """\
-    auditwheel repair --only-plat \
-        --exclude libc10.so \
-        --exclude libtorch.so \
-        --exclude libtorch_cpu.so \
-        --exclude libtorch_python.so \
-        -w {dest_dir} {wheel} \
-    """
+  auditwheel repair \
+    --plat {policy} \
+    --only-plat \
+    --exclude libc10.so \
+    --exclude libtorch.so \
+    --exclude libtorch_cpu.so \
+    --exclude libtorch_python.so \
+    -w {dest_dir} {wheel} \
+  """
