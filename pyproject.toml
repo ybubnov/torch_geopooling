@@ -1,6 +1,6 @@
 [project]
 name = "torch-geopooling"
-version = "1.0.0rc1"
+version = "1.0.0rc2"
 license = {file = "LICENSE"}
 
 description = "The geospatial pooling modules for neural networks in PyTorch"
@@ -51,6 +51,7 @@ include = ["torch_geopooling*"]
 build-backend = "setuptools_cxx.build_meta"
 backend-path = [".", "setuptools_cxx"]
 requires = [
+  "auditwheel >= 6.0.0",
   "cibuildwheel >= 2.0.0",
   "conan >= 2.0.0",
   "ninja >= 1.0.0",
@@ -115,3 +116,4 @@ archs = ["arm64"]
 archs = ["aarch64", "x86_64"]
 manylinux-x86_64-image = "manylinux2014"
 manylinux-aarch64-image = "manylinux2014"
+repair-wheel-command = "auditwheel repair --exclude libc10.so --exclude libtorch.so --exclude libtorch_cpu.so --exclude libtorch_python.so -w {dest_dir} {wheel}"
