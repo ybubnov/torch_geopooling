@@ -1,6 +1,6 @@
 [project]
 name = "torch-geopooling"
-version = "1.0.0rc3"
+dynamic = ["version"]
 license = {file = "LICENSE"}
 
 description = "The geospatial pooling modules for neural networks in PyTorch"
@@ -13,7 +13,7 @@ requires-python = ">=3.9"
 
 # See https://pypi.python.org/pypi?%3Aaction=list_classifiers
 classifiers = [
-  "Development Status :: 4 - Beta",
+  "Development Status :: 5 - Production/Stable",
   "Intended Audience :: Developers",
   "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
   "Topic :: Scientific/Engineering",
@@ -41,6 +41,10 @@ source = "https://github.com/ybubnov/torch_geopooling"
 
 [project.optional-dependencies]
 test = ["pytest >= 8.0.0", "numpy >= 1.4.0"]
+
+
+[tool.setuptools.dynamic]
+version = {attr = "torch_geopooling.__version__"}
 
 
 [tool.setuptools.packages.find]
