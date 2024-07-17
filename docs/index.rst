@@ -5,6 +5,11 @@ The geospatial pooling library for PyTorch
 The Torch Geopooling library is an extension for PyTorch library that provide extra layers for
 building geospatial neural networks.
 
+Here is an example of how you can learn geospatial data using Torch Geopooling:
+
+.. image:: index.png
+   :alt: Torch Geopooling Example
+
 Installation
 ------------
 
