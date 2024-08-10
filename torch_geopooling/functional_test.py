@@ -17,6 +17,7 @@ import pytest
 import torch
 
 from torch_geopooling.functional import (
+    AdaptiveFunction,
     adaptive_quad_pool2d,
     adaptive_avg_quad_pool2d,
     adaptive_max_quad_pool2d,
@@ -24,6 +25,20 @@ from torch_geopooling.functional import (
     max_quad_pool2d,
     quad_pool2d,
 )
+
+
+def test_adaptive_function_ravel() -> None:
+    size = (2, 2, 2, 1)
+    tiles = torch.tensor([[0, 0, 0], [1, 0, 0], [1, 0, 1], [1, 1, 0], [1, 1, 1]], dtype=torch.int64)
+
+    weight = torch.tensor([[1.0], [2.0], [3.0], [4.0], [5.0]], dtype=torch.float64)
+
+    sparse = AdaptiveFunction.sparse_unravel(tiles, weight, size=size)
+    torch.testing.assert_close(sparse.to_dense().to_sparse_coo(), sparse)
+
+    tiles_out, weight_out = AdaptiveFunction.sparse_ravel(sparse)
+    torch.testing.assert_close(tiles_out, tiles)
+    torch.testing.assert_close(weight_out, weight)
 
 
 @pytest.mark.parametrize(

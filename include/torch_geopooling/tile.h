@@ -76,7 +76,7 @@ public:
     std::vector<T>
     vec() const
     {
-        std::vector<T> zxy({static_cast<T>(m_z), static_cast<T>(m_y), static_cast<T>(m_x)});
+        std::vector<T> zxy({static_cast<T>(m_z), static_cast<T>(m_x), static_cast<T>(m_y)});
         return zxy;
     }
 

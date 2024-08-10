@@ -91,7 +91,12 @@ class _AdaptiveQuadPool(nn.Module):
     def initialize_parameters(self) -> None:
         # The weight for adaptive operation should be sparse, since training operation
         # results in a dynamic change of the underlying quadtree.
-        weight_size = (self.max_depth, 1 << self.max_depth, 1 << self.max_depth, self.feature_dim)
+        weight_size = (
+            self.max_depth + 1,
+            1 << self.max_depth,
+            1 << self.max_depth,
+            self.feature_dim,
+        )
         self.weight = nn.Parameter(torch.sparse_coo_tensor(size=weight_size, dtype=torch.float64))
 
     @property

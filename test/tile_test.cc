@@ -34,4 +34,15 @@ BOOST_AUTO_TEST_CASE(tile_children)
 }
 
 
+BOOST_AUTO_TEST_CASE(tile_vec)
+{
+    auto tile = Tile(10, 30, 40);
+
+    auto actual = tile.template vec<int64_t>();
+    std::vector<int64_t> expect({10, 30, 40});
+
+    BOOST_CHECK_EQUAL_COLLECTIONS(actual.begin(), actual.end(), expect.begin(), expect.end());
+}
+
+
 BOOST_AUTO_TEST_SUITE_END()

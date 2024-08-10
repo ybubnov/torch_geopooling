@@ -271,10 +271,12 @@ class AdaptiveFunction(autograd.Function):
         weight, input = ctx.saved_tensors
         tiles, w = cls.sparse_ravel(weight)
 
-        grad_weight_out = cls.backward_impl(grad_values, tiles, w, input, ctx.exterior, *ctx.params)  # type: ignore
-        grad_weight_out = cls.sparse_unravel(tiles, grad_weight_out, size=weight.size())
+        grad_weight_dense = cls.backward_impl(
+            grad_values, tiles, w, input, ctx.exterior, *ctx.params
+        )  # type: ignore
+        grad_weight_sparse = cls.sparse_unravel(tiles, grad_weight_dense, size=weight.size())
 
-        return grad_weight_out.coalesce(), None, None, None, None
+        return grad_weight_sparse.coalesce(), None, None, None, None
 
     @classmethod
     def func(
