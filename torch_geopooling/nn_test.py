@@ -87,8 +87,10 @@ def test_adaptive_quad_pool2d_optimize() -> None:
     weight = pool.weight.to_dense()
 
     for i, tile in enumerate(y_tile):
+        z, x, y = tile
         expect_weight = y_true[i].item()
-        actual_weight = weight[*tile].detach().item()
+        actual_weight = weight[z, x, y].detach().item()
+
         assert pytest.approx(expect_weight, abs=1e-1) == actual_weight, f"tile {tile} is wrong"
 
 
