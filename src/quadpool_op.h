@@ -188,8 +188,8 @@ struct quadpool_op {
         // automatically added by the `torch_geopooling::quadtree_set`.
         if (tiles_size == 0) {
             auto value = torch::zeros({values.size(1)}, values.options());
-            m_values.insert(std::make_pair(Tile(Tile::root), value));
-            m_indices.insert(std::make_pair(Tile(Tile::root), 0));
+            m_values.insert_or_assign(Tile(Tile::root), value);
+            m_indices.insert_or_assign(Tile(Tile::root), 0);
         }
 
         for (int64_t i = 0; i < tiles_size; i++) {
@@ -197,8 +197,8 @@ struct quadpool_op {
             auto value = values[i];
             auto index = m_indices.size();
 
-            m_values.insert(std::make_pair(tile, value));
-            m_indices.insert(std::make_pair(tile, index));
+            m_values.insert_or_assign(tile, value);
+            m_indices.insert_or_assign(tile, index);
         }
 
         torch::Tensor tiles_out, values_out;
@@ -207,11 +207,11 @@ struct quadpool_op {
             auto input_it = input_iterator(input);
 
             m_set.insert(input_it.begin(), input_it.end(), [&](Tile parent_tile, Tile child_tile) {
-                auto value = m_values.at(parent_tile);
+                torch::Tensor value = m_values.at(parent_tile);
                 int64_t index = m_indices.size();
 
-                m_values.insert(std::make_pair(child_tile, value));
-                m_indices.insert(std::make_pair(child_tile, index));
+                m_values.insert_or_assign(child_tile, value);
+                m_indices.insert_or_assign(child_tile, index);
             });
 
             // After the modification of a tree, update the final tiles and weights.
@@ -360,7 +360,7 @@ struct quadpool_stat_op : public quadpool_op<Coordinate> {
             auto tile = node.tile();
             auto stat = m_init_function(*this, tile);
 
-            m_stats.insert(std::make_pair(tile, stat));
+            m_stats.insert_or_assign(tile, stat);
             unvisited.push(tile.parent());
         }
 
@@ -379,7 +379,7 @@ struct quadpool_stat_op : public quadpool_op<Coordinate> {
 
             auto children_tiles = tile.children();
             auto stat = m_stat_function(*this, children_tiles);
-            m_stats.insert(std::make_pair(tile, stat));
+            m_stats.insert_or_assign(tile, stat);
 
             // Do not compute the root tile multiple times, once is enough.
             if (tile != Tile::root) {
