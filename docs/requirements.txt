@@ -1,3 +1,4 @@
+IPython
 furo>=2022.6.4
 sphinx-autobuild
 sphinx
