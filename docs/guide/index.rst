@@ -9,6 +9,7 @@ assumed that a reader knows fundamentals of the `PyTorch`_ library.
 
    getting_started.ipynb
    house_prices.ipynb
+   pooling_polygons.ipynb
 
 
 .. _PyTorch: https://pytorch.org/tutorials/beginner/basics/intro.html
