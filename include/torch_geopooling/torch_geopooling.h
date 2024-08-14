@@ -1,5 +1,6 @@
 #pragma once
 
+#include <torch_geopooling/embedding.h>
 #include <torch_geopooling/exception.h>
 #include <torch_geopooling/quadpool.h>
 #include <torch_geopooling/quadrect.h>

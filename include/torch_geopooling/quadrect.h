@@ -178,6 +178,18 @@ public:
         );
     }
 
+    inline value_type
+    xmin() const
+    {
+        return m_xmin;
+    }
+
+    inline value_type
+    ymin() const
+    {
+        return m_ymin;
+    }
+
     /// Returns width of the rectangle.
     ///
     /// \return width of the rectangle.
