@@ -84,8 +84,8 @@ check_shape_forward(
 )
 {
     TORCH_CHECK(
-        options.exterior.size() == 4,
-        op, ": exterior must be a tuple of four doubles comprising a rectangle (x, y, w, h)"
+        options.exterior.size() == 4, op,
+        ": exterior must be a tuple of four doubles comprising a rectangle (x, y, w, h)"
     );
     TORCH_CHECK(options.padding.size() == 2, op, ": padding should be comprised of 2 elements");
 
@@ -119,9 +119,8 @@ check_shape_backward(
     );
 
     TORCH_CHECK(
-        grad.sizes() == grad_sizes,
-        op,
-        ": gradient shape (", grad.sizes(), ") should be the same as input (", input.sizes(), ")"
+        grad.sizes() == grad_sizes, op, ": gradient shape (", grad.sizes(),
+        ") should be the same as input (", input.sizes(), ")"
     );
 }
 
