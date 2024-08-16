@@ -105,9 +105,8 @@ BOOST_AUTO_TEST_CASE(embedding2d_backward_grad)
     auto padding = std::vector<int64_t>({1, 1});
     auto exterior = std::vector<double>({0.0, 0.0, 10.0, 10.0});
 
-    auto grad_weight = embedding2d_backward(
-        grad, input, weight, /*padding=*/padding, /*exterior=*/exterior
-    );
+    auto grad_weight
+        = embedding2d_backward(grad, input, weight, /*padding=*/padding, /*exterior=*/exterior);
 
     BOOST_REQUIRE_EQUAL(grad_weight.sizes(), weight.sizes());
     // Grad of weight represents the following field:
@@ -118,17 +117,22 @@ BOOST_AUTO_TEST_CASE(embedding2d_backward_grad)
     // [3]|    1|   11|   10|   11|
     //       [0]|  [1]|  [2]|  [3]|
 
-    auto grad_expect = torch::tensor({
-        {1.0,  1.0,  0.0,  1.0},
-        {1.0, 11.0, 10.0, 11.0},
-        {0.0, 10.0, 10.0, 10.0},
-        {1.0, 11.0, 10.0, 11.0},
-    }, options);
+    auto grad_expect = torch::tensor(
+        {
+            {1.0, 1.0, 0.0, 1.0},
+            {1.0, 11.0, 10.0, 11.0},
+            {0.0, 10.0, 10.0, 10.0},
+            {1.0, 11.0, 10.0, 11.0},
+        },
+        options
+    );
 
     for (auto i : c10::irange(weight.size(0))) {
         for (auto j : c10::irange(weight.size(1))) {
             for (auto k : c10::irange(weight.size(2))) {
-                BOOST_CHECK_EQUAL(grad_weight[i][j][k].item<double>(), grad_expect[i][j].item<double>());
+                BOOST_CHECK_EQUAL(
+                    grad_weight[i][j][k].item<double>(), grad_expect[i][j].item<double>()
+                );
             }
         }
     }
