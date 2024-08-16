@@ -26,7 +26,17 @@ torch::Tensor
 embedding2d(
     const torch::Tensor& input,
     const torch::Tensor& weight,
-    const c10::ArrayRef<int64_t>& padding,
+    const c10::IntArrayRef& padding,
+    const c10::ArrayRef<double>& exterior
+);
+
+
+torch::Tensor
+embedding2d_backward(
+    const torch::Tensor& grad,
+    const torch::Tensor& input,
+    const torch::Tensor& weight,
+    const c10::IntArrayRef& padding,
     const c10::ArrayRef<double>& exterior
 );
 
