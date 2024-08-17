@@ -139,9 +139,14 @@ embedding2d(
     auto options = embedding_options{.padding = padding.vec(), .exterior = exterior.vec()};
     check_shape_forward("embedding2d", input, weight, options);
 
+    const std::string op = "embedding2d: ";
+    std::cout << op << " (1) " << std::endl;
+
     auto width_size = weight.size(0);
     auto height_size = weight.size(1);
     auto feature_size = weight.size(2);
+
+    std::cout << op << " (2) " << std::endl;
 
     // Bucketize input coordinates given the exterior of the quad and number of buckets
     // within the weight tensor.
@@ -149,12 +154,18 @@ embedding2d(
     auto quad_width = quad_exterior.width() / width_size;
     auto quad_height = quad_exterior.height() / height_size;
 
+    std::cout << op << " (3) " << std::endl;
+
     auto weight_data = weight.accessor<double, 3>();
     auto input_data = input.accessor<double, 2>();
+
+    std::cout << op << " (4) " << std::endl;
 
     auto input_size = input.size(0);
     const auto kernel_size = options.kernel_size(feature_size);
     std::vector<torch::Tensor> output(input_size);
+
+    std::cout << op << " (5) " << std::endl;
 
     at::parallel_for(0, input_size, at::internal::GRAIN_SIZE, [&](int64_t begin, int64_t end) {
         for (const auto i : c10::irange(begin, end)) {
@@ -185,7 +196,11 @@ embedding2d(
         }
     });
 
-    return torch::stack(output, /*dim=*/0);
+    std::cout << op << " (6) " << std::endl;
+
+    auto result = torch::stack(output, /*dim=*/0);
+    std::cout << op << " (7) " << std::endl;
+    return result;
 }
 
 

@@ -13,12 +13,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import pytest
 import torch
 from torch_geopooling.functional.embedding import embedding2d
 
 
-@pytest.mark.skip("skip embedding test.")
 def test_embedding2d() -> None:
     input = torch.rand((100, 2), dtype=torch.float64) * 10.0
     weight = torch.rand((1024, 1024, 3), dtype=torch.float64)
