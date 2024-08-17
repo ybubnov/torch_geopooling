@@ -139,4 +139,32 @@ BOOST_AUTO_TEST_CASE(embedding2d_backward_grad)
 }
 
 
+BOOST_AUTO_TEST_CASE(embedding2d_eval_large)
+{
+    auto options = torch::TensorOptions().dtype(torch::kFloat64).device(torch::kCPU);
+
+    auto weight = torch::rand({1024, 1024, 3}, options);
+    auto input = torch::rand({100, 2}, options) * 10.0;
+
+    auto output
+        = embedding2d(input, weight, /*padding=*/{3, 2}, /*exterior=*/{-10.0, 10.0, 20.0, 20.0});
+
+    BOOST_CHECK_EQUAL(output.sizes(), c10::IntArrayRef({100, 7, 5, 3}));
+}
+
+
+BOOST_AUTO_TEST_CASE(embedding2d_edge_input)
+{
+    auto options = torch::TensorOptions().dtype(torch::kFloat64).device(torch::kCPU);
+
+    auto weight = torch::rand({1024, 1024, 3}, options);
+    auto input = torch::tensor({{9.98656, 2.8601}}, options);
+
+    auto output
+        = embedding2d(input, weight, /*padding=*/{3, 2}, /*exterior=*/{-10.0, 10.0, 20.0, 20.0});
+
+    BOOST_CHECK_EQUAL(output.sizes(), c10::IntArrayRef({1, 7, 5, 3}));
+}
+
+
 BOOST_AUTO_TEST_SUITE_END()

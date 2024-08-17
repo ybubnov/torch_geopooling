@@ -6,7 +6,7 @@ torch_geopooling.nn
 .. automodule:: torch_geopooling.nn
 .. currentmodule:: torch_geopooling.nn
 
-TBD.
+These are basic building blocks for graphs.
 
 
 Pooling Layers

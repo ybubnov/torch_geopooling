@@ -6,7 +6,19 @@ torch_geopooling.functional
 .. automodule:: torch_geopooling.functional
 .. currentmodule:: torch_geopooling.functional
 
-TBD.
+These are low-level primitives for geospatial learning.
+
+
+Sparse functions
+----------------
+
+.. autosummary::
+   :nosignatures:
+   :toctree: generated
+   :template: function.rst
+
+   torch_geopooling.functional.embedding2d
+
 
 
 Pooling functions

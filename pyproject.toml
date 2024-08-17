@@ -40,7 +40,7 @@ source = "https://github.com/ybubnov/torch_geopooling"
 
 
 [project.optional-dependencies]
-test = ["pytest >= 8.0.0", "numpy >= 1.4.0"]
+test = ["pytest >= 8.0.0", "numpy >= 1.4.0, <2.0.0"]
 
 
 [tool.setuptools.dynamic]
@@ -59,10 +59,10 @@ requires = [
   "cibuildwheel >= 2.0.0",
   "conan >= 2.0.0",
   "ninja >= 1.0.0",
-  "numpy >= 1.4.0",
+  "numpy >= 1.4.0, < 2.0.0",
   "pybind11 >= 2.0.0, < 3.0.0",
   "python-dotenv >= 1.0.0",
-  "setuptools ~= 69.5.1",
+  "setuptools ~= 70.0.0",
   "sympy >= 1.12",
   "toml >= 0.7.0; python_version < '3.11'",
   "torch >= 2.2.0, < 2.3.0; sys_platform == 'linux'",

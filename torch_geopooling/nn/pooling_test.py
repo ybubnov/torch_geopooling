@@ -22,7 +22,7 @@ from torch import nn
 from torch.optim import SGD
 from torch.nn import L1Loss
 
-from torch_geopooling.nn import (
+from torch_geopooling.nn.pooling import (
     AdaptiveAvgQuadPool2d,
     AdaptiveMaxQuadPool2d,
     AdaptiveQuadPool2d,
