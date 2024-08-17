@@ -155,6 +155,8 @@ embedding2d(
     auto quad_height = quad_exterior.height() / height_size;
 
     std::cout << op << " (3) " << std::endl;
+    std::cout << op << "   ?? weight_size = " << weight.sizes() << std::endl;
+    std::cout << op << "   ?? input_size = " << input.sizes() << std::endl;
 
     auto weight_data = weight.accessor<double, 3>();
     auto input_data = input.accessor<double, 2>();
@@ -166,6 +168,8 @@ embedding2d(
     std::vector<torch::Tensor> output(input_size);
 
     std::cout << op << " (5) " << std::endl;
+    std::cout << op << "   ?? kernel_size = [" << kernel_size[0] << "," << kernel_size[1];
+    std::cout << "," << kernel_size[2] << "]" << std::endl;
 
     at::parallel_for(0, input_size, at::internal::GRAIN_SIZE, [&](int64_t begin, int64_t end) {
         for (const auto i : c10::irange(begin, end)) {
@@ -185,6 +189,9 @@ embedding2d(
                     j1 = modulo(height_size, j1);
 
                     for (auto j2 : c10::irange(feature_size)) {
+                        std::cout << "  [" << i << "]: (" << k0 << "," << k1 << "," << j2;
+                        std::cout << ") <-";
+                        std::cout << "  (" << j0 << "," << j1 << "," << j2 << ")" << std::endl;
                         kernel_data[k0][k1][j2] = weight_data[j0][j1][j2];
                     }
                     k1++;
@@ -196,10 +203,10 @@ embedding2d(
         }
     });
 
-    std::cout << op << " (6) " << std::endl;
+    std::cout << op << " (7) " << std::endl;
 
     auto result = torch::stack(output, /*dim=*/0);
-    std::cout << op << " (7) " << std::endl;
+    std::cout << op << " (8) " << std::endl;
     return result;
 }
 
