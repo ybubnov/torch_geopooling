@@ -13,6 +13,7 @@
 /// You should have received a copy of the GNU General Public License
 /// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#include <algorithm>
 #include <cmath>
 #include <vector>
 
@@ -40,6 +41,8 @@ modulo(int64_t base, int64_t value)
 {
     value = value < 0 ? base + value : value;
     value = value >= base ? base - value : value;
+    value = std::min(value, base - 1);
+    value = std::max(value, (int64_t)0);
     return value;
 }
 
