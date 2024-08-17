@@ -46,6 +46,7 @@ setup(
         cpp_extension.CppExtension(
             name="torch_geopooling._C",
             sources=[
+                "src/embedding.cc",
                 "src/quadpool.cc",
                 "src/tile.cc",
                 "torch_geopooling/__bind__/python_module.cc",

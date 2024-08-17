@@ -16,7 +16,10 @@
 #include <cmath>
 #include <vector>
 
+#include <ATen/Dispatch.h>
+#include <ATen/Functions.h>
 #include <ATen/Parallel.h>
+#include <ATen/TensorAccessor.h>
 
 #include <torch_geopooling/embedding.h>
 #include <torch_geopooling/quadrect.h>
@@ -129,7 +132,7 @@ torch::Tensor
 embedding2d(
     const torch::Tensor& input,
     const torch::Tensor& weight,
-    const c10::ArrayRef<int64_t>& padding,
+    const c10::IntArrayRef& padding,
     const c10::ArrayRef<double>& exterior
 )
 {
@@ -200,7 +203,6 @@ embedding2d_backward(
 
     auto width_size = weight.size(0);
     auto height_size = weight.size(1);
-    auto feature_size = weight.size(2);
 
     auto quad_exterior = quadrect(exterior.vec());
     auto quad_width = quad_exterior.width() / width_size;

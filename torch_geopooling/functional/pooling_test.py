@@ -16,7 +16,7 @@
 import pytest
 import torch
 
-from torch_geopooling.functional import (
+from torch_geopooling.functional.pooling import (
     AdaptiveFunction,
     adaptive_quad_pool2d,
     adaptive_avg_quad_pool2d,
