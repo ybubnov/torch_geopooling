@@ -15,6 +15,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <tuple>
 #include <vector>
 
 #include <ATen/Dispatch.h>
@@ -29,32 +30,15 @@
 namespace torch_geopooling {
 
 
-int64_t
-floordiv(double a, double b)
-{
-    return static_cast<int64_t>(std::floor(a / b));
-}
-
-
-int64_t
-modulo(int64_t base, int64_t value)
-{
-    value = value < 0 ? base + value : value;
-    value = value >= base ? base - value : value;
-    value = std::min(value, base - 1);
-    value = std::max(value, (int64_t)0);
-    return value;
-}
-
-
 struct embedding_options {
     std::vector<int64_t> padding;
     std::vector<double> exterior;
+    std::vector<int64_t> manifold;
 
     std::vector<int64_t>
-    kernel_size(int64_t feature_size) const
+    kernel_size() const
     {
-        return {kernel_width(), kernel_height(), feature_size};
+        return {kernel_width(), kernel_height(), feature_size()};
     }
 
     int64_t
@@ -78,6 +62,84 @@ struct embedding_options {
         }
         return is_non_neg;
     }
+
+    bool
+    is_padding_inside() const
+    {
+        bool is_inside = true;
+        auto dim = std::min(manifold.size(), padding.size());
+
+        for (const auto i : c10::irange(dim)) {
+            is_inside &= (padding[i] < manifold[i]);
+        }
+        return is_inside;
+    }
+
+    inline int64_t
+    feature_size() const
+    {
+        return manifold[2];
+    }
+};
+
+
+struct embedding_op {
+    using range_type = c10::integer_range<int64_t>;
+
+    embedding_options m_options;
+    quadrect<double> m_rescale;
+
+    embedding_op(const embedding_options& options)
+    : m_options(options),
+      m_rescale(0.0, 0.0, 0.0, 0.0)
+    {
+        auto exterior = quadrect(options.exterior);
+        auto width_size = options.manifold[0];
+        auto height_size = options.manifold[1];
+
+        m_rescale = quadrect(
+            exterior.xmin(), exterior.ymin(), exterior.width() / width_size,
+            exterior.height() / height_size
+        );
+    }
+
+    int64_t
+    floordiv(double a, double b) const
+    {
+        return static_cast<int64_t>(std::floor(a / b));
+    }
+
+    int64_t
+    modulo(int64_t value, int64_t base) const
+    {
+        value = value < 0 ? base + value : value;
+        value = value >= base ? value - base : value;
+        value = std::min(value, base - 1);
+        value = std::max(value, (int64_t)0);
+        return value;
+    }
+
+    range_type
+    kernel_width_iterator(double x) const
+    {
+        int64_t w = floordiv(x - m_rescale.xmin(), m_rescale.width());
+        return c10::irange(w - m_options.padding[0], w + m_options.padding[0] + 1);
+    }
+
+    range_type
+    kernel_height_iterator(double y) const
+    {
+        int64_t h = floordiv(y - m_rescale.ymin(), m_rescale.height());
+        return c10::irange(h - m_options.padding[1], h + m_options.padding[1] + 1);
+    }
+
+    inline std::tuple<int64_t, int64_t>
+    reflect(double x, double y) const
+    {
+        x = modulo(x, m_options.manifold[0]);
+        y = modulo(y, m_options.manifold[1]);
+        return std::make_tuple(x, y);
+    }
 };
 
 
@@ -94,6 +156,8 @@ check_shape_forward(
         ": exterior must be a tuple of four doubles comprising a rectangle (x, y, w, h)"
     );
     TORCH_CHECK(options.padding.size() == 2, op, ": padding should be comprised of 2 elements");
+    TORCH_CHECK(!options.is_padding_neg(), op, ": padding should be non-negative");
+    TORCH_CHECK(options.is_padding_inside(), op, ": padding should be inside of the manifold");
 
     TORCH_CHECK(input.dim() == 2, op, ": input must be 2D, got ", input.dim(), "D");
     TORCH_CHECK(
@@ -139,63 +203,40 @@ embedding2d(
     const c10::ArrayRef<double>& exterior
 )
 {
-    auto options = embedding_options{.padding = padding.vec(), .exterior = exterior.vec()};
+    auto options = embedding_options{
+        .padding = padding.vec(),
+        .exterior = exterior.vec(),
+        .manifold = weight.sizes().vec(),
+    };
+
     check_shape_forward("embedding2d", input, weight, options);
 
-    const std::string op = "embedding2d: ";
-    std::cout << op << " (1) " << std::endl;
-
-    auto width_size = weight.size(0);
-    auto height_size = weight.size(1);
-    auto feature_size = weight.size(2);
-
-    std::cout << op << " (2) " << std::endl;
-
-    // Bucketize input coordinates given the exterior of the quad and number of buckets
-    // within the weight tensor.
-    auto quad_exterior = quadrect(exterior.vec());
-    auto quad_width = quad_exterior.width() / width_size;
-    auto quad_height = quad_exterior.height() / height_size;
-
-    std::cout << op << " (3) " << std::endl;
-    std::cout << op << "   ?? weight_size = " << weight.sizes() << std::endl;
-    std::cout << op << "   ?? input_size = " << input.sizes() << std::endl;
+    auto op = embedding_op(options);
 
     auto weight_data = weight.accessor<double, 3>();
     auto input_data = input.accessor<double, 2>();
 
-    std::cout << op << " (4) " << std::endl;
+    const auto input_size = input.size(0);
+    const auto kernel_size = options.kernel_size();
+    const auto feature_size = options.feature_size();
 
-    auto input_size = input.size(0);
-    const auto kernel_size = options.kernel_size(feature_size);
     std::vector<torch::Tensor> output(input_size);
-
-    std::cout << op << " (5) " << std::endl;
-    std::cout << op << "   ?? kernel_size = [" << kernel_size[0] << "," << kernel_size[1];
-    std::cout << "," << kernel_size[2] << "]" << std::endl;
 
     at::parallel_for(0, input_size, at::internal::GRAIN_SIZE, [&](int64_t begin, int64_t end) {
         for (const auto i : c10::irange(begin, end)) {
-            const auto& point = input_data[i];
+            auto x = input_data[i][0];
+            auto y = input_data[i][1];
 
             auto kernel = torch::empty(kernel_size, weight.options());
             auto kernel_data = kernel.accessor<double, 3>();
 
-            const auto w = floordiv(point[0] - quad_exterior.xmin(), quad_width);
-            const auto h = floordiv(point[1] - quad_exterior.ymin(), quad_height);
-
             int64_t k0 = 0;
-            for (auto j0 : c10::irange(w - padding[0], w + padding[0] + 1)) {
+            for (auto j0 : op.kernel_width_iterator(x)) {
                 int64_t k1 = 0;
-                for (auto j1 : c10::irange(h - padding[1], h + padding[1] + 1)) {
-                    j0 = modulo(width_size, j0);
-                    j1 = modulo(height_size, j1);
+                for (auto j1 : op.kernel_height_iterator(y)) {
+                    std::tie(j0, j1) = op.reflect(j0, j1);
 
                     for (auto j2 : c10::irange(feature_size)) {
-                        std::cout << "  [" << i << "]: (" << k0 << "," << k1 << "," << j2;
-                        std::cout << ") <-";
-                        std::cout << "  (" << j0 << "," << j1 << "," << j2 << ") == ";
-                        std::cout << point[0] << ";" << point[1] << std::endl;
                         kernel_data[k0][k1][j2] = weight_data[j0][j1][j2];
                     }
                     k1++;
@@ -207,11 +248,7 @@ embedding2d(
         }
     });
 
-    std::cout << op << " (7) " << std::endl;
-
-    auto result = torch::stack(output, /*dim=*/0);
-    std::cout << op << " (8) " << std::endl;
-    return result;
+    return torch::stack(output, /*dim=*/0);
 }
 
 
@@ -224,17 +261,18 @@ embedding2d_backward(
     const c10::ArrayRef<double>& exterior
 )
 {
-    auto options = embedding_options{.padding = padding.vec(), .exterior = exterior.vec()};
+    auto options = embedding_options{
+        .padding = padding.vec(),
+        .exterior = exterior.vec(),
+        .manifold = weight.sizes().vec(),
+    };
+
     check_shape_backward("embedding2d_backward", grad, input, weight, options);
 
-    auto width_size = weight.size(0);
-    auto height_size = weight.size(1);
-
-    auto quad_exterior = quadrect(exterior.vec());
-    auto quad_width = quad_exterior.width() / width_size;
-    auto quad_height = quad_exterior.height() / height_size;
+    auto op = embedding_op(options);
 
     const int64_t weight_numel = weight.numel();
+    const int64_t width_size = weight.size(0);
     const int64_t input_size = input.size(0);
     const int64_t grain_size = at::internal::GRAIN_SIZE;
 
@@ -243,17 +281,14 @@ embedding2d_backward(
 
     at::parallel_for(0, weight_numel, grain_size, [&](int64_t begin, int64_t end) {
         for (const auto i : c10::irange(input_size)) {
-            const auto& point = input_data[i];
-
-            const auto w = floordiv(point[0] - quad_exterior.xmin(), quad_width);
-            const auto h = floordiv(point[1] - quad_exterior.ymin(), quad_height);
+            auto x = input_data[i][0];
+            auto y = input_data[i][1];
 
             int64_t k0 = 0;
-            for (auto j0 : c10::irange(w - padding[0], w + padding[0] + 1)) {
+            for (auto j0 : op.kernel_width_iterator(x)) {
                 int64_t k1 = 0;
-                for (auto j1 : c10::irange(h - padding[1], h + padding[1] + 1)) {
-                    j0 = modulo(width_size, j0);
-                    j1 = modulo(height_size, j1);
+                for (auto j1 : op.kernel_height_iterator(y)) {
+                    std::tie(j0, j1) = op.reflect(j0, j1);
 
                     int64_t pos = j0 * width_size + j1;
                     if (pos >= begin && pos < end) {
