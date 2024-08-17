@@ -191,7 +191,8 @@ embedding2d(
                     for (auto j2 : c10::irange(feature_size)) {
                         std::cout << "  [" << i << "]: (" << k0 << "," << k1 << "," << j2;
                         std::cout << ") <-";
-                        std::cout << "  (" << j0 << "," << j1 << "," << j2 << ")" << std::endl;
+                        std::cout << "  (" << j0 << "," << j1 << "," << j2 << ") == ";
+                        std::cout << point[0] << ";" << point[1] << std::endl;
                         kernel_data[k0][k1][j2] = weight_data[j0][j1][j2];
                     }
                     k1++;
