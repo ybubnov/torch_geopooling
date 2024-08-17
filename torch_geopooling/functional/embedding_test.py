@@ -18,7 +18,7 @@ import torch
 from torch_geopooling.functional.embedding import embedding2d
 
 
-@pytest.skip
+@pytest.mark.skip("skip embedding test.")
 def test_embedding2d() -> None:
     input = torch.rand((100, 2), dtype=torch.float64) * 10.0
     weight = torch.rand((1024, 1024, 3), dtype=torch.float64)
