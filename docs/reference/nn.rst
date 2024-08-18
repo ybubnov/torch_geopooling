@@ -9,6 +9,17 @@ torch_geopooling.nn
 These are basic building blocks for graphs.
 
 
+Sparse Layers
+-------------
+
+.. autosummary::
+   :nosignatures:
+   :toctree: generated
+   :template: class.rst
+
+   torch_geopooling.nn.Embedding2d
+
+
 Pooling Layers
 --------------
 
