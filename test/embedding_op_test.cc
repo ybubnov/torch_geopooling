@@ -7,8 +7,8 @@
 
 #include <torch_geopooling.h>
 
-#include <embedding_op.h>
 #include "testing.h"
+#include <embedding_op.h>
 
 
 using namespace torch_geopooling;
@@ -19,7 +19,7 @@ BOOST_AUTO_TEST_SUITE(TestEmbeddingOperation)
 
 BOOST_AUTO_TEST_CASE(embedding_options_exterior)
 {
-    auto options = embedding_options {
+    auto options = embedding_options{
         .padding = {0, 0},
         .exterior = {0, 0},
         .manifold = {0, 0},
@@ -37,7 +37,7 @@ BOOST_AUTO_TEST_CASE(embedding_options_exterior)
 
 BOOST_AUTO_TEST_CASE(embedding_options_padding)
 {
-    auto options = embedding_options {
+    auto options = embedding_options{
         .padding = {0},
         .exterior = {0.0, 0.0, 10.0, 10.0},
         .manifold = {4, 4, 3},
@@ -71,7 +71,7 @@ BOOST_AUTO_TEST_CASE(embedding_options_padding)
 
 BOOST_AUTO_TEST_CASE(embedding_check_shape_forward)
 {
-    auto options = embedding_options {
+    auto options = embedding_options{
         .padding = {0, 0},
         .exterior = {0.0, 0.0, 10.0, 10.0},
         .manifold = {16, 16, 5},
@@ -119,7 +119,7 @@ BOOST_AUTO_TEST_CASE(embedding_check_shape_forward)
 
 BOOST_AUTO_TEST_CASE(embedding_check_shape_backward)
 {
-    auto options = embedding_options {
+    auto options = embedding_options{
         .padding = {4, 2},
         .exterior = {0.0, 0.0, 10.0, 10.0},
         .manifold = {16, 16, 7},

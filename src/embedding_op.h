@@ -160,7 +160,10 @@ check_shape_forward(
     TORCH_CHECK(options.is_padding_inside(), op, ": padding should be inside of the manifold");
 
     TORCH_CHECK(input.dim() == 2, op, ": input must be 2D, got ", input.dim(), "D");
-    TORCH_CHECK(input.size(1) == 2, op, ": input must be comprised of 2D coordinates, got", input.size(1), "D");
+    TORCH_CHECK(
+        input.size(1) == 2, op, ": input must be comprised of 2D coordinates, got", input.size(1),
+        "D"
+    );
     TORCH_CHECK(
         input.dtype() == torch::kFloat64, op, ": operation only supports Float64 input, got ",
         input.dtype()

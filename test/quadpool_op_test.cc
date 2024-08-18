@@ -7,8 +7,8 @@
 
 #include <torch_geopooling.h>
 
-#include <quadpool_op.h>
 #include "testing.h"
+#include <quadpool_op.h>
 
 
 using namespace torch_geopooling;
