@@ -37,16 +37,16 @@ class Function(autograd.Function):
 
     @staticmethod
     def setup_context(ctx: FunctionCtx, inputs: Tuple, outputs: Tuple) -> None:
-        input, _, padding, exterior = inputs
+        input, weight, padding, exterior = inputs
 
-        ctx.save_for_backward(input)
+        ctx.save_for_backward(input, weight)
         ctx.padding = padding
         ctx.exterior = exterior
 
     @staticmethod
     def backward(ctx: FunctionCtx, grad: Tensor) -> Tuple[Optional[Tensor], ...]:
-        (input,) = ctx.saved_tensors
-        grad_weight = _C.embedding2d_backward(grad)
+        input, weight = ctx.saved_tensors
+        grad_weight = _C.embedding2d_backward(grad, input, weight, ctx.padding, ctx.exterior)
         return None, grad_weight, None, None
 
 
@@ -63,6 +63,7 @@ def embedding2d(
     This function accepts a list of (x, y) coordinates and retrieves the corresponding
     spatial embeddings from a provided embedding matrix. The embeddings are selected
     based on the input coordinates, with an optional padding to include neighboring cells.
+    See :class:`torch_geopooling.nn.Embedding2d` for more details.
 
     Args:
         input: A list of 2D coordinates where each coordinate is represented as a tuple (x, y),

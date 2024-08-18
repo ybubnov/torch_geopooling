@@ -188,13 +188,13 @@ check_shape_backward(
 {
     check_shape_forward(op, input, weight, options);
 
-    const auto grad_sizes = c10::IntArrayRef(
+    const auto grad_sizes = std::vector<int64_t>(
         {input.size(0), options.kernel_width(), options.kernel_height(), options.feature_size()}
     );
 
     TORCH_CHECK(
-        grad.sizes() == grad_sizes, op, ": gradient shape (", grad.sizes(),
-        ") does not match expected shape (", grad_sizes, ")"
+        grad.sizes() == c10::IntArrayRef(grad_sizes), op, ": gradient shape (", grad.sizes(),
+        ") does not match expected shape (", c10::IntArrayRef(grad_sizes), ")"
     );
 }
 
