@@ -8,19 +8,10 @@
 #include <torch_geopooling.h>
 
 #include <quadpool_op.h>
+#include "testing.h"
 
 
 using namespace torch_geopooling;
-
-
-template <typename Exception>
-std::function<bool(const Exception&)>
-exception_contains_text(const std::string error_message)
-{
-    return [&](const Exception& error) -> bool {
-        return std::string(error.what()).find(error_message) != std::string::npos;
-    };
-}
 
 
 BOOST_AUTO_TEST_SUITE(TestQuadPoolOperation)

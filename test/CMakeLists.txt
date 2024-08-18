@@ -3,6 +3,8 @@ find_package(Boost COMPONENTS unit_test_framework REQUIRED)
 # Define the c++ standard.
 add_definitions(-std=c++17)
 
+include_directories()
+
 
 file(GLOB torch_geopooling_TEST_SOURCES *.cc)
 
