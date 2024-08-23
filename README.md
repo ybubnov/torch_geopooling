@@ -61,6 +61,16 @@ input = torch.DoubleTensor(200, 2).uniform_(0.0, 10.0)
 output = pool(input)
 ```
 
+Using 2-dimensional embedding module for learning data on sphere:
+```py
+import torch
+from torch_geopooling.nn import Embedding2d
+
+embedding = Embedding2d((16, 16, 2), padding=(3, 3), exterior=(-100, 100, 200.0, 200.0))
+input = torch.DoubleTensor(1024, 2).normal_(5.0, 1.0)
+output = embedding(input)
+```
+
 ## License
 
 The Torch Geopooling is distributed under GPLv3 license. See the [LICENSE](LICENSE) file for full
