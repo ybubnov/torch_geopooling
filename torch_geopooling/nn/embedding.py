@@ -76,6 +76,7 @@ class Embedding2d(nn.Module):
         padding: Tuple[int, int] = (0, 0),
     ) -> None:
         super().__init__()
+        self.manifold = manifold
         self.exterior = cast(ExteriorTuple, tuple(map(float, exterior)))
         self.padding = padding
 
