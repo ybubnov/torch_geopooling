@@ -32,22 +32,26 @@ class Function(autograd.Function):
         weight: Tensor,
         padding: Tuple[int, int],
         exterior: ExteriorTuple,
+        reflection: bool,
     ) -> Tensor:
-        return _C.embedding2d(input, weight, padding, exterior)
+        return _C.embedding2d(input, weight, padding, exterior, reflection)
 
     @staticmethod
     def setup_context(ctx: FunctionCtx, inputs: Tuple, outputs: Tuple) -> None:
-        input, weight, padding, exterior = inputs
+        input, weight, padding, exterior, reflection = inputs
 
         ctx.save_for_backward(input, weight)
         ctx.padding = padding
         ctx.exterior = exterior
+        ctx.reflection = reflection
 
     @staticmethod
     def backward(ctx: FunctionCtx, grad: Tensor) -> Tuple[Optional[Tensor], ...]:
         input, weight = ctx.saved_tensors
-        grad_weight = _C.embedding2d_backward(grad, input, weight, ctx.padding, ctx.exterior)
-        return None, grad_weight, None, None
+        grad_weight = _C.embedding2d_backward(
+            grad, input, weight, ctx.padding, ctx.exterior, ctx.reflection
+        )
+        return None, grad_weight, None, None, None
 
 
 def embedding2d(
@@ -56,6 +60,7 @@ def embedding2d(
     *,
     padding: Tuple[int, int] = (0, 0),
     exterior: ExteriorTuple,
+    reflection: bool = True,
 ) -> Tensor:
     """
     Retrieves spatial embeddings from a fixed-size lookup table based on 2D coordinates.
@@ -77,9 +82,11 @@ def embedding2d(
         exterior: The geometric boundary of the learning space, specified as a tuple (X, Y, W, H),
             where X and Y represent the origin, and W and H represent the width and height of the
             space, respectively.
+        reflection: When true, kernel is wrapped around the exterior space, otherwise kernel is
+            squeezed into borders.
 
     Returns:
         Tensor: The retrieved spatial embeddings corresponding to the input coordinates.
     """
 
-    return Function.apply(input, weight, padding, exterior)
+    return Function.apply(input, weight, padding, exterior, reflection)

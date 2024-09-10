@@ -153,4 +153,22 @@ BOOST_AUTO_TEST_CASE(embedding2d_eval_large)
 }
 
 
+BOOST_AUTO_TEST_CASE(embedding2d_no_reflection)
+{
+    auto options = torch::TensorOptions().dtype(torch::kFloat64).device(torch::kCPU);
+
+    auto weight = torch::rand({1024, 1024, 4}, options);
+    auto input = torch::rand({100, 2}, options) * 12.0;
+
+    auto output = embedding2d(
+        input, weight,
+        /*padding=*/{10, 10},
+        /*exterior=*/{-10.0, 10.0, 20.0, 20.0},
+        /*reflection=*/false
+    );
+
+    BOOST_CHECK_EQUAL(output.sizes(), c10::IntArrayRef({100, 21, 21, 4}));
+}
+
+
 BOOST_AUTO_TEST_SUITE_END()

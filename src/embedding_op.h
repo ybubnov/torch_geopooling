@@ -34,6 +34,7 @@ struct embedding_options {
     std::vector<int64_t> padding;
     std::vector<double> exterior;
     std::vector<int64_t> manifold;
+    bool reflection;
 
     std::vector<int64_t>
     kernel_size() const
@@ -134,10 +135,15 @@ struct embedding_op {
     }
 
     inline std::tuple<int64_t, int64_t>
-    reflect(double x, double y) const
+    reflect(int64_t x, int64_t y) const
     {
-        x = modulo(x, m_options.manifold[0]);
-        y = modulo(y, m_options.manifold[1]);
+        if (m_options.reflection) {
+            x = modulo(x, m_options.manifold[0]);
+            y = modulo(y, m_options.manifold[1]);
+        } else {
+            x = std::max(std::min(x, m_options.manifold[0] - 1), (int64_t)0);
+            y = std::max(std::min(y, m_options.manifold[1] - 1), (int64_t)0);
+        }
         return std::make_tuple(x, y);
     }
 };
