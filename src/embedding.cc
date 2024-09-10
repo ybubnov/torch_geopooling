@@ -33,13 +33,15 @@ embedding2d(
     const torch::Tensor& input,
     const torch::Tensor& weight,
     const c10::IntArrayRef& padding,
-    const c10::ArrayRef<double>& exterior
+    const c10::ArrayRef<double>& exterior,
+    bool reflection
 )
 {
     auto options = embedding_options{
         .padding = padding.vec(),
         .exterior = exterior.vec(),
         .manifold = weight.sizes().vec(),
+        .reflection = reflection,
     };
 
     check_shape_forward("embedding2d", input, weight, options);
@@ -91,13 +93,15 @@ embedding2d_backward(
     const torch::Tensor& input,
     const torch::Tensor& weight,
     const c10::IntArrayRef& padding,
-    const c10::ArrayRef<double>& exterior
+    const c10::ArrayRef<double>& exterior,
+    bool reflection
 )
 {
     auto options = embedding_options{
         .padding = padding.vec(),
         .exterior = exterior.vec(),
         .manifold = weight.sizes().vec(),
+        .reflection = reflection,
     };
 
     check_shape_backward("embedding2d_backward", grad, input, weight, options);

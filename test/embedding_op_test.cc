@@ -23,6 +23,7 @@ BOOST_AUTO_TEST_CASE(embedding_options_exterior)
         .padding = {0, 0},
         .exterior = {0, 0},
         .manifold = {0, 0},
+        .reflection = true,
     };
 
     auto input = torch::empty({1, 1});
@@ -41,6 +42,7 @@ BOOST_AUTO_TEST_CASE(embedding_options_padding)
         .padding = {0},
         .exterior = {0.0, 0.0, 10.0, 10.0},
         .manifold = {4, 4, 3},
+        .reflection = true,
     };
 
     auto tensor_options = torch::TensorOptions().dtype(torch::kFloat64);
@@ -75,6 +77,7 @@ BOOST_AUTO_TEST_CASE(embedding_check_shape_forward)
         .padding = {0, 0},
         .exterior = {0.0, 0.0, 10.0, 10.0},
         .manifold = {16, 16, 5},
+        .reflection = true,
     };
 
     auto int64_dtype = torch::TensorOptions().dtype(torch::kInt64);
@@ -123,6 +126,7 @@ BOOST_AUTO_TEST_CASE(embedding_check_shape_backward)
         .padding = {4, 2},
         .exterior = {0.0, 0.0, 10.0, 10.0},
         .manifold = {16, 16, 7},
+        .reflection = true,
     };
 
     auto float64_dtype = torch::TensorOptions().dtype(torch::kFloat64);

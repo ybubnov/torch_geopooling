@@ -46,6 +46,8 @@ class Embedding2d(nn.Module):
         exterior: The geometric boundary of the learning space, specified as a tuple (X, Y, W, H),
             where X and Y represent the origin, and W and H represent the width and height of the
             space, respectively.
+        reflection: When true, kernel is wrapped around the exterior space, otherwise kernel is
+            squeezed into borders.
 
     Shape:
         - Input: :math:`(*, 2)`, where 2 comprises x and y coordinates.
@@ -74,17 +76,27 @@ class Embedding2d(nn.Module):
         manifold: Tuple[int, int, int],
         exterior: _Exterior,
         padding: Tuple[int, int] = (0, 0),
+        reflection: bool = True,
     ) -> None:
         super().__init__()
         self.manifold = manifold
         self.exterior = cast(ExteriorTuple, tuple(map(float, exterior)))
         self.padding = padding
+        self.reflection = reflection
 
         self.weight = nn.Parameter(torch.empty(manifold, dtype=torch.float64))
         nn.init.zeros_(self.weight)
 
     def extra_repr(self) -> str:
-        return "{manifold}, exterior={exterior}, padding={padding}".format(**self.__dict__)
+        return "{manifold}, exterior={exterior}, padding={padding}, reflection={reflection}".format(
+            **self.__dict__
+        )
 
     def forward(self, input: Tensor) -> Tensor:
-        return F.embedding2d(input, self.weight, exterior=self.exterior, padding=self.padding)
+        return F.embedding2d(
+            input,
+            self.weight,
+            exterior=self.exterior,
+            padding=self.padding,
+            reflection=self.reflection,
+        )

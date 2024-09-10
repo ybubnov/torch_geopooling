@@ -26,6 +26,7 @@ def test_embedding2d() -> None:
         weight,
         padding=(3, 2),
         exterior=(-10.0, -10.0, 20.0, 20.0),
+        reflection=True,
     )
 
     assert result.size() == torch.Size([100, 7, 5, 3])
