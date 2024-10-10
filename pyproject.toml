@@ -35,8 +35,9 @@ dependencies = ["shapely>=2.0.0", "torch >= 2.3.0, < 2.4.0"]
 
 
 [project.urls]
-homepage = "https://github.com/ybubnov/torch_geopooling"
-source = "https://github.com/ybubnov/torch_geopooling"
+Funding = "https://github.com/sponsors/ybubnov"
+Homepage = "https://github.com/ybubnov/torch_geopooling"
+Source = "https://github.com/ybubnov/torch_geopooling"
 
 
 [project.optional-dependencies]
