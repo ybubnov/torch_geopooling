@@ -63,7 +63,7 @@ requires = [
   "numpy >= 1.4.0, < 2.0.0",
   "pybind11 >= 2.0.0, < 3.0.0",
   "python-dotenv >= 1.0.0",
-  "setuptools ~= 70.0.0",
+  "setuptools ~= 80.0.0",
   "sympy >= 1.12",
   "toml >= 0.7.0; python_version < '3.11'",
   "torch >= 2.3.0, < 2.4.0; sys_platform == 'linux'",
