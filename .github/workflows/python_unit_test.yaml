@@ -22,7 +22,7 @@ jobs:
       with:
         python-version: "${{ matrix.python-version }}"
 
-    - name: Update pip
+    - name: Update pip version
       run: pip install -U pip
 
     - name: Compile Python extension
