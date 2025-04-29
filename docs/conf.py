@@ -35,7 +35,7 @@ pygments_style = "default"
 
 
 # Options for HTML output
-html_theme = "furo"
+html_theme = "pydata_sphinx_theme"
 templates_path = ["_templates"]
 
 

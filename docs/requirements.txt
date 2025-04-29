@@ -1,5 +1,5 @@
 IPython
-furo>=2022.6.4
+pydata-sphinx-theme
 sphinx-autobuild
 sphinx
 nbsphinx
