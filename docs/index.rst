@@ -90,6 +90,7 @@ Consider visiting the guides and API reference for further implementation and us
 
    GitHub <https://github.com/ybubnov/torch_geopooling>
    PyPI <https://pypi.org/project/torch_geopooling>
+   Sponsor <https://github.com/sponsors/ybubnov>
 
 
 .. _PyTorch: https://pytorch.org
