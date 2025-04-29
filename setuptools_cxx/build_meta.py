@@ -14,7 +14,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from setuptools import build_meta as _build_meta
-from setuptools.build_meta import *
+from setuptools.build_meta import *  # noqa
 from setuptools.build_meta import build_editable as _build_editable
 from setuptools.build_meta import build_sdist as _build_sdist
 from setuptools.build_meta import build_wheel as _build_wheel
