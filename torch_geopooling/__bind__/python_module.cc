@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2025 Yakau Bubnou
+// SPDX-FileType: SOURCE
+
 #include <torch_geopooling/torch_geopooling.h>
 
 #include <pybind11/pybind11.h>
