@@ -59,7 +59,4 @@ jobs:
       run: cmake --build ${{github.workspace}}/build
 
     - name: Run unit-tests
-      env:
-        ARGS: --verbose
-        BOOST_TEST_LOG_LEVEL: test_suite
       run: ninja -C ${{github.workspace}}/build test
