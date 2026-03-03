@@ -8,13 +8,31 @@ on:
 
 jobs:
   pre-commit:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      - name: Install pre-commit
-        run: pip install pre-commit
-      - name: Run pre-commit
-        run: pre-commit run --all-files --show-diff-on-failure --color=always
+    - name: Checkout source code
+      uses: actions/checkout@v4
+
+    - name: Configure apt to disable recommendations installation
+      id: configure_apt
+      run: |
+        echo 'APT::Install-Recommends "false";' >> /etc/apt/apt.conf
+        echo 'APT::Install-Suggests "false";' >> /etc/apt/apt.conf
+
+    - name: Install third-party libraries and tools
+      id: install_packages
+      run: |
+        apt-get update
+        apt-get install -y cmake build-essential libboost-test-dev libfmt-dev wget unzip
+        apt-get install -y python3-pip python3-numpy
+
+    - name: Install Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install pre-commit
+      run: pip install pre-commit
+
+    - name: Run pre-commit
+      run: pre-commit run --all-files --show-diff-on-failure --color=always

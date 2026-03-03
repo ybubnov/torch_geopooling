@@ -1,18 +1,6 @@
-/// Copyright (C) 2024, Yakau Bubnou
-///
-/// This program is free software: you can redistribute it and/or modify
-/// it under the terms of the GNU General Public License as published by
-/// the Free Software Foundation, either version 3 of the License, or
-/// (at your option) any later version.
-///
-/// This program is distributed in the hope that it will be useful,
-/// but WITHOUT ANY WARRANTY; without even the implied warranty of
-/// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-/// GNU General Public License for more details.
-///
-/// You should have received a copy of the GNU General Public License
-/// along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Yakau Bubnou
+// SPDX-FileType: SOURCE
 
 #pragma once
 
@@ -157,7 +145,7 @@ struct quadpool_op {
       m_training(training)
     {}
 
-    std::tuple<torch::Tensor, torch::Tensor>
+    virtual std::tuple<torch::Tensor, torch::Tensor>
     forward(tensor_reference tiles, tensor_reference values, tensor_reference input)
     {
         check_tiles(tiles);
@@ -347,7 +335,7 @@ struct quadpool_stat_op : public quadpool_op<Coordinate> {
     {}
 
     std::tuple<torch::Tensor, torch::Tensor>
-    forward(tensor_reference tiles, tensor_reference values, tensor_reference input)
+    forward(tensor_reference tiles, tensor_reference values, tensor_reference input) override
     {
         auto result = base::forward(tiles, values, input);
 
