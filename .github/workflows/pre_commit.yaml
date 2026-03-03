@@ -9,6 +9,8 @@ on:
 jobs:
   pre-commit:
     runs-on: ubuntu-24.04
+    container:
+      image: ubuntu:24.04
     steps:
     - name: Checkout source code
       uses: actions/checkout@v4
@@ -16,8 +18,8 @@ jobs:
     - name: Configure apt to disable recommendations installation
       id: configure_apt
       run: |
-        echo 'APT::Install-Recommends "false";' | tee /etc/apt/apt.conf.d/overrides
-        echo 'APT::Install-Suggests "false";' | tee -a /etc/apt/apt.conf.d/overrides
+        echo 'APT::Install-Recommends "false";' >> /etc/apt/apt.conf
+        echo 'APT::Install-Suggests "false";' >> /etc/apt/apt.conf
 
     - name: Install third-party libraries and tools
       id: install_packages

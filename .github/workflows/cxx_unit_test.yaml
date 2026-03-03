@@ -20,14 +20,14 @@ jobs:
     - name: Configure apt to disable recommendations installation
       id: configure_apt
       run: |
-        echo 'APT::Install-Recommends "false";' | tee /etc/apt/apt.conf.d/overrides
-        echo 'APT::Install-Suggests "false";' | tee -a /etc/apt/apt.conf.d/overrides
+        echo 'APT::Install-Recommends "false";' >> /etc/apt/apt.conf
+        echo 'APT::Install-Suggests "false";' >> /etc/apt/apt.conf
 
     - name: Install third-party libraries and tools
       id: install_packages
       run: |
         apt-get update
-        apt-get install -y cmake build-essential libboost-test-dev libfmt-dev wget unzip
+        apt-get install -y cmake build-essential libboost-test-dev libfmt-dev ninja-build wget unzip
         apt-get install -y python3-pip python3-numpy
 
     - name: Install python libraries
@@ -47,7 +47,7 @@ jobs:
         -B ${{github.workspace}}/build
 
     - name: Build CXX library
-      run: cmake --build ${{github.workspace}}/build
+      run: cmake -G Ninja --build ${{github.workspace}}/build
 
     - name: Run unit-tests
       run: make -C ${{github.workspace}}/build test ARGS="--verbose" BOOST_TEST_LOG_LEVEL="test_suite"
