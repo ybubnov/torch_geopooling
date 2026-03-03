@@ -20,8 +20,8 @@ jobs:
     - name: Configure apt to disable recommendations installation
       id: configure_apt
       run: |
-        echo 'APT::Install-Recommends "false";' >> /etc/apt/apt.conf
-        echo 'APT::Install-Suggests "false";' >> /etc/apt/apt.conf
+        echo 'APT::Install-Recommends "false";' | sudo tee -a /etc/apt/apt.conf
+        echo 'APT::Install-Suggests "false";' | sudo tee -a /etc/apt/apt.conf
 
     - name: Install third-party libraries and tools
       id: install_packages
