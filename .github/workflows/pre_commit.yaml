@@ -31,8 +31,8 @@ jobs:
     - name: Install third-party libraries and tools
       id: install_packages
       run: |
-        apt-get install -y cmake build-essential libboost-test-dev libfmt-dev wget unzip
-        apt-get install -y python3-numpy pre-commit
+        sudo apt-get install -y cmake build-essential libboost-test-dev libfmt-dev wget unzip
+        sudo apt-get install -y python3-numpy pre-commit
 
     - name: Run pre-commit
       run: pre-commit run --all-files --show-diff-on-failure --color=always
