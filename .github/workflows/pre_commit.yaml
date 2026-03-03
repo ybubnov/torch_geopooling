@@ -30,15 +30,12 @@ jobs:
       run: |
         apt-get update
         apt-get install -y cmake build-essential libboost-test-dev libfmt-dev wget unzip
-        apt-get install -y python3-pip python3-numpy
+        apt-get install -y python3-numpy pre-commit
 
     - name: Install Python
       uses: actions/setup-python@v5
       with:
         python-version: '3.12'
-
-    - name: Install pre-commit
-      run: pip install pre-commit
 
     - name: Run pre-commit
       run: pre-commit run --all-files --show-diff-on-failure --color=always
