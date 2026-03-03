@@ -22,15 +22,18 @@ jobs:
       with:
         python-version: '3.12'
 
+    - name: Configure apt to disable recommendations installation
+      id: configure_apt
+      run: |
+        echo 'APT::Install-Recommends "false";' >> $HOME/.apt.conf
+        echo 'APT::Install-Suggests "false";' >> $HOME/.apt.conf
+
     - name: Install third-party libraries and tools
       id: install_packages
       run: |
         apt-get update
-        apt-get install \
-          -y \
-          --no-install-recommends \
-          --no-install-suggests \
-          cmake build-essential libboost-test-dev libfmt-dev wget unzip python3-numpy pre-commit
+        apt-get install -y cmake build-essential libboost-test-dev libfmt-dev wget unzip
+        apt-get install -y python3-numpy pre-commit
 
     - name: Run pre-commit
       run: pre-commit run --all-files --show-diff-on-failure --color=always
