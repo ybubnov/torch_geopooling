@@ -39,7 +39,7 @@ jobs:
         apt-get install -y python3-numpy pre-commit
 
     - name: Fix git safe directory
-      run: git config --global --add safe.directory $GITHUB_WORKSPACE
+      run: git config --global --add safe.directory '*'
 
     - name: Run pre-commit
       run: pre-commit run --all-files --show-diff-on-failure --color=always

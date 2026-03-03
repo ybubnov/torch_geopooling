@@ -53,9 +53,10 @@ jobs:
         cmake
         -DCMAKE_PREFIX_PATH=${{steps.find_torch.outputs.cmake_prefix_path}}
         -B ${{github.workspace}}/build
+        -G Ninja
 
     - name: Build CXX library
-      run: cmake -G Ninja --build ${{github.workspace}}/build
+      run: cmake --build ${{github.workspace}}/build
 
     - name: Run unit-tests
       run: ninja -C ${{github.workspace}}/build test ARGS="--verbose" BOOST_TEST_LOG_LEVEL="test_suite"
