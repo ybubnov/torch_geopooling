@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [main]
 
+concurrency:
+  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.ref }}
+
 jobs:
   unit-tests:
     runs-on: ubuntu-24.04
@@ -50,4 +54,4 @@ jobs:
       run: cmake -G Ninja --build ${{github.workspace}}/build
 
     - name: Run unit-tests
-      run: make -C ${{github.workspace}}/build test ARGS="--verbose" BOOST_TEST_LOG_LEVEL="test_suite"
+      run: ninja -C ${{github.workspace}}/build test ARGS="--verbose" BOOST_TEST_LOG_LEVEL="test_suite"
