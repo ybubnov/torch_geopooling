@@ -30,3 +30,20 @@ repos:
     - id: clang-format
       name: "Clang C++ formatting"
       types_or: [c++, c, cuda]
+- repo: local
+  hooks:
+    - id: cppcheck
+      name: "C++ static analysis"
+      types_or: [c++, c, cuda]
+      entry: cppcheck -q -j8 --error-exitcode=1
+      language: python
+      additional_dependencies: ["cppcheck==1.5.1"]
+      args:
+        - --check-level=exhaustive
+        - --language=c++
+        - --enable=warning
+        - --library=boost
+        - -I include
+        - src
+        - test
+        - torch_geopooling
