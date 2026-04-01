@@ -1,6 +1,5 @@
-IPython
-pydata-sphinx-theme
-sphinx-autobuild
-sphinx
-nbsphinx
+pydata-sphinx-theme==0.16.1
+sphinx-autobuild==2024.10.3
+Sphinx==7.3.7
+nbsphinx==0.9.4
 torch_geopooling
